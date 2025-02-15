@@ -2,7 +2,90 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:roky_holding/env/text_input_object.dart';
 
-Widget buildTextField(TextEditingController controller, String label,
+import 'package:flutter/material.dart';
+
+Widget BuildPwdTextField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    IconData icon,
+    bool visible,
+    int maxLength,
+    ) {
+  return _BuildPwdTextField(
+    controller: controller,
+    label: label,
+    hint: hint,
+    icon: icon,
+    visible: visible,
+    maxLength: maxLength,
+  );
+}
+
+class _BuildPwdTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool visible;
+  final int maxLength;
+
+  const _BuildPwdTextField({
+    Key? key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    required this.visible,
+    required this.maxLength,
+  }) : super(key: key);
+
+  @override
+  _BuildPwdTextFieldState createState() => _BuildPwdTextFieldState();
+}
+
+class _BuildPwdTextFieldState extends State<_BuildPwdTextField> {
+  bool _obscureText = true; // Password visibility toggle
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      child: Visibility(
+        visible: widget.visible,
+        child: TextFormField(
+          maxLength: widget.maxLength,
+          controller: widget.controller,
+          obscureText: _obscureText,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            hintText: widget.hint,
+            prefixIcon: Icon(widget.icon),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscureText ? Icons.visibility_off : Icons.visibility,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscureText = !_obscureText;
+                });
+              },
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter ${widget.label}';
+            }
+            return null;
+          },
+        ),
+      ),
+    );
+  }
+}
+
+
+
+Widget BuildTextField(TextEditingController controller, String label,
     String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
@@ -24,7 +107,33 @@ Widget buildTextField(TextEditingController controller, String label,
           )));
 }
 
-Widget buildNumberField(TextEditingController controller, String label,
+Widget BuildTextFieldReadOnly(TextEditingController controller, String label,
+    String hint, IconData icon, bool visible, int MaxLenth) {
+  return SizedBox(
+      child: Visibility(
+          visible: visible,
+          child: TextFormField(
+            readOnly: true,
+            maxLength: MaxLenth,
+            controller: controller,
+            decoration: InputTextDecoration.inputDecoration(
+              lable_Text: label,
+              hint_Text: hint,
+              icons: icon,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter $label';
+              }
+              return null;
+            },
+          )));
+}
+
+
+
+
+Widget BuildNumberField(TextEditingController controller, String label,
     String hint, IconData icon, bool vis, int MaxLenth) {
   return SizedBox(
     child: Visibility(
@@ -53,7 +162,7 @@ Widget buildNumberField(TextEditingController controller, String label,
   );
 }
 
-Widget buildReadOnlyTotalCostField(TextEditingController controller,
+Widget BuildReadOnlyTotalCostField(TextEditingController controller,
     String label, String hint, IconData icon, int MaxLenth) {
   return Card(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -243,3 +352,30 @@ class _CustomDropdownState extends State<CustomDropdown> {
  },
 ),
 */
+
+Widget BuildDetailRow(String label, dynamic value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start, // Align text to the top
+      children: [
+        SizedBox(
+          width: 120, // Fixed width for labels for better alignment
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Expanded( // Use Expanded to take up remaining space
+          child: Text(
+            value != null ? value.toString() : 'Not available',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ],
+    ),
+  );
+}

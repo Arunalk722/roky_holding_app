@@ -29,9 +29,137 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       _dropDownToProject();
     });
   }
+  Future<void> updateLocation(BuildContext context, int idtbl_project_location, int project_id,
+      String location_name, String is_active, String change_by) async {
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Updating location...');
+
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        PD.pd(text: "Authentication token is missing.");
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'Authentication Error',
+          message: "Authentication token is missing.",
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+        return;
+      }
+
+      String url = '${APIHost().APIURL}/location_controller.php/edit_location_name';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": APIToken().token,
+          "idtbl_project_location": idtbl_project_location,
+          "project_id": project_id,
+          "location_name": location_name,
+          "is_active": 1,
+          "change_by": change_by,
+        }),
+      );
+
+      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+
+      if (response.statusCode == 200) {
+        WaitDialog.hideDialog(context);
+
+        try {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final int status = responseData['status'];
+
+          if (status == 200) {
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: "Successful",
+              message: responseData['message'],
+              btnName: 'Ok',
+              icon: Icons.verified_outlined,
+              iconColor: Colors.black,
+              btnColor: Colors.green,
+
+            );
+          } else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(text: "Error decoding JSON: $e, Body: ${response.body}");
+          ExceptionDialog.exceptionDialog(
+            context,
+            title: 'JSON Error',
+            message: "Error decoding JSON response: $e",
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        WaitDialog.hideDialog(context);
+        String errorMessage = 'Error with status code ${response.statusCode}';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (e) {
+            errorMessage = response.body;
+          }
+        }
+        PD.pd(text: errorMessage);
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'HTTP Error',
+          message: errorMessage,
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'An error occurred: $e';
+      if (e is FormatException) {
+        errorMessage = 'Invalid JSON response';
+      } else if (e is SocketException) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      WaitDialog.hideDialog(context);
+      PD.pd(text: errorMessage);
+      ExceptionDialog.exceptionDialog(
+        context,
+        title: 'General Error',
+        message: errorMessage,
+        btnName: 'OK',
+        icon: Icons.error,
+        iconColor: Colors.red,
+        btnColor: Colors.black,
+      );
+    }
+    finally{
+
+    }
+  }
 
   List<dynamic> _activeDropDownMap = [];
   bool _isDropDownToProjects = false;
+
   Future<void> _dropDownToProject() async {
     setState(() {
       _isDropDownToProjects = true;
@@ -95,6 +223,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
 
   List<dynamic> _activeProjects = [];
   bool _isLoadingProjects = false;
+
+
   Future<void> _loadProjects(String project) async {
     setState(() {
       _isLoadingProjects = true;
@@ -115,7 +245,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         headers: {
           "Content-Type": "application/json",
         },
-        body: jsonEncode({"Authorization": token, "project_name": project}),
+        body: jsonEncode({"Authorization": token,
+          "project_name": project}),
       );
 
       PD.pd(text: reqUrl);
@@ -123,7 +254,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       if (response.statusCode == 200) {
         try {
           final responseData =
-              jsonDecode(response.body) as Map<String, dynamic>;
+          jsonDecode(response.body) as Map<String, dynamic>;
 
           // Check the status and process the response data
           if (responseData['status'] == 200) {
@@ -170,7 +301,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
   List<String> _dropdownProjects = [];
 
   // Text field controllers and validation
-  final _locationNameController = TextEditingController();
+  final _txtLocationNameController = TextEditingController();
   final _civilWorkCostController = TextEditingController();
   final _filtersCostController = TextEditingController();
   final _serviceCostController = TextEditingController();
@@ -185,7 +316,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
 
   @override
   void dispose() {
-    _locationNameController.dispose();
+    _txtLocationNameController.dispose();
     _civilWorkCostController.dispose();
     _filtersCostController.dispose();
     _serviceCostController.dispose();
@@ -221,22 +352,22 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
             padding: const EdgeInsets.all(20.0),
             child: isWideScreen
                 ? Row(
-                    // Two columns if screen is wide
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildCreateLocationForm()),
-                      const SizedBox(width: 20), // Spacing between columns
-                      Expanded(child: _buildActiveLocationCostListCard()),
-                    ],
-                  )
+              // Two columns if screen is wide
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildCreateLocationForm()),
+                const SizedBox(width: 20), // Spacing between columns
+                Expanded(child: _buildActiveLocationCostListCard()),
+              ],
+            )
                 : Column(
-                    // Stack in a single column if screen is narrow
-                    children: [
-                      _buildCreateLocationForm(),
-                      const SizedBox(height: 20), // Spacing between sections
-                      _buildActiveLocationCostListCard(),
-                    ],
-                  ),
+              // Stack in a single column if screen is narrow
+              children: [
+                _buildCreateLocationForm(),
+                const SizedBox(height: 20), // Spacing between sections
+                _buildActiveLocationCostListCard(),
+              ],
+            ),
           );
         },
       ),
@@ -292,10 +423,12 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                       },
                     ),
 
-                    buildTextField(_txtLocationName, 'Location Name',
-                        'Colombo water', Icons.key, true, 45),
-                    buildTextField(
-                        _txtTender, 'Tender', 'TX00001', Icons.key, true, 20),
+                    BuildTextField(_txtLocationName, 'Location Name',
+                        'Colombo water', Icons.create, true, 45),
+                    BuildTextField(
+                        _txtTender, 'Tender', 'TX00001', Icons.query_builder, true, 20),
+                    BuildNumberField(
+                        _txtTender, 'Location Estimation', '50000LKR', Icons.currency_exchange, true, 20),
                     //  _buildCheckboxes(),
                   ],
                 ),
@@ -392,7 +525,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       } else {
         WaitDialog.hideDialog(context);
         String errorMessage =
-            'Project Management location creating failed with status code ${response.statusCode}';
+            'Project Management location creating failed with status code ${response
+            .statusCode}';
         if (response.body.isNotEmpty) {
           try {
             final errorData = jsonDecode(response.body);
@@ -440,7 +574,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
           PD.pd(text: "Form is valid!");
           PD.pd(
               text:
-                  "Selected Cost Type: $_selectedProjectName"); // Print selected cost type
+              "Selected Cost Type: $_selectedProjectName"); // Print selected cost type
 
           YNDialogCon.ynDialogMessage(
             context,
@@ -458,8 +592,10 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         }
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue, // Background color
-        foregroundColor: Colors.white, // Text color
+        backgroundColor: Colors.blue,
+        // Background color
+        foregroundColor: Colors.white,
+        // Text color
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
         textStyle: const TextStyle(
           fontSize: 18,
@@ -468,7 +604,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-        elevation: 5, // Elevation
+        elevation: 5,
+        // Elevation
         shadowColor: Colors.black26, // Shadow color
       ),
       child: const Text('Create Locations'),
@@ -510,93 +647,88 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       itemCount: _activeProjects.length,
       itemBuilder: (context, index) {
         final project = _activeProjects[index];
+        TextEditingController _txtLocationNameController = TextEditingController(
+            text: project['location_name']);
+        TextEditingController _txtProjectName = TextEditingController(
+            text: project['project_name']);
+        TextEditingController _txtTender = TextEditingController(
+            text: project['tender_cost']);
+        TextEditingController _txtEstimation = TextEditingController(
+            text: project['exp_estimation_cost']);
+
         return Card(
-          // ... (card styling)
+          // Styling for the card
           child: InkWell(
             onTap: () {},
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  Icon(Icons.business, color: Theme.of(context).primaryColor),
+                  Icon(Icons.business, color: Theme
+                      .of(context)
+                      .primaryColor),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          project['location_name'] ?? 'Project Name',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        BuildTextFieldReadOnly(_txtProjectName, 'Project Name', '', Icons.construction, true, 20),
+                        BuildTextField(_txtLocationNameController, 'Location Name', '', Icons.pin_drop, true, 20),
+
+
+                        // Row for Estimated Cost and Tender Cost
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Spread out the fields
+                          children: [
+                            Expanded(
+                              child: BuildTextFieldReadOnly(
+                                _txtEstimation,
+                                'Estimated Cost',
+                                '',
+                                Icons.attach_money,
+                                true,
+                                20,
+                              ),
+                            ),
+                            const SizedBox(width: 16), // Add some spacing between the two fields
+                            Expanded(
+                              child: BuildTextFieldReadOnly(
+                                _txtTender,
+                                'Tender Cost',
+                                '',
+                                Icons.attach_money,
+                                true,
+                                20,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tender: ${project['project_id'] ?? 'Tender Number'}',
-                          style: const TextStyle(fontSize: 14),
+
+
+
+                        BuildDetailRow(
+                            'Created:',
+                            '${project['created_by']} on ${project['created_date']}'
                         ),
-                        // Add more details here if needed
+                        BuildDetailRow(
+                            'Changed:',
+                            '${project['change_by']} on ${project['change_date']}'
+                        ),
                       ],
                     ),
                   ),
-                  // View Button
+
+                  // Save Button
                   IconButton(
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.save),
                     onPressed: () {
-                      // _isActive = project['is_active'] =='0'?false: true; // Handle null case
-                      //  _userVisible = project['user_visible'] =='0'?false: true; // Handle null case
-                      //  _txtTenderController.text = project['tender'] ?? ''; // Update text field
-                      //  _txtProjectNameController.text = project['project_name'] ?? '';
-                      //  _txtCivilWorkCostController.text = project['exp_cost_civil_work']?.toString() ?? '';
-                      // _txtMaterialCostController.text = project['exp_cost_material']?.toString() ?? '';
-                      /// _txtAllocatedCostController.text = project['exp_allocated_cost']?.toString() ?? '';
-                      // _txtTenderCostController.text = project['tender_cost']?.toString() ?? '';
-                      setState(() {});
-                      //  PD.pd(text: "View project: ${project['tender']}");
+                      // Here you can call the API to save the updates
+                      updateLocation(context, project['idtbl_project_location'],
+                          project['project_id'],
+                          _txtLocationNameController.text,
+                          _txtProjectName.text, _txtTender.text);
                     },
                   ),
-                  // IconButton(
-                  //   icon: Icon(project['user_visible'] as int==1?Icons.visibility_off_outlined:Icons.visibility),color: project['user_visible'] as int==1?Colors.blue:Colors.red,
-                  //   onPressed: () async {
-                  //     int vis = project['user_visible'] as int;
-                  //     String mg =vis==0?'visibility enable':'visibility disable';
-                  //     int result = await YNDialogCon.ynDialogMessage(
-                  //       context,
-                  //       messageTitle: mg,
-                  //       messageBody: "Are you sure you want to ${mg} project ${project['tender']}?",
-                  //       icon: vis==0?Icons.visibility:Icons.visibility_off_outlined,
-                  //       iconColor: Colors.orange,
-                  //       btnDone: vis==0?"Yes, Visible":"Yes, Invisible",
-                  //       btnClose: "Cancel",
-                  //     );
-                  //     if (result == 1) {
-                  //       //  _changeVisibility(context, '${project['idtbl_projects']}', project['user_visible'] =='0'?false: true);
-                  //     }
-                  //   },
-                  // ),
-                  // Delete Button
-                  // IconButton(
-                  //   icon: const Icon(Icons.delete, color: Colors.red), // Red color for delete action
-                  //   onPressed: () async {
-                  //     int result = await YNDialogCon.ynDialogMessage(
-                  //       context,
-                  //       messageTitle: "Confirm Deletion",
-                  //       messageBody: "Are you sure you want to delete project ${project['tender']}?",
-                  //       icon: Icons.warning,
-                  //       iconColor: Colors.orange,
-                  //       btnDone: "Yes, Delete",
-                  //       btnClose: "Cancel",
-                  //     );
-                  //
-                  //     if (result == 1) {
-                  //     //  PD.pd(text: "Deleting project: ${project['idtbl_projects']}");
-                  //       //_deleteProject(context,'${project['idtbl_projects']}'); // Call delete function after confirmation
-                  //     }
-                  //   },
-                  // ),
-
-                  // const Icon(Icons.arrow_forward_ios, size: 16), // Optional arrow
                 ],
               ),
             ),
@@ -606,3 +738,51 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     );
   }
 }
+
+//
+// Widget BuildDetailRow(String label, TextEditingController controller) {
+//   return Padding(
+//     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+//     child: Row(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         SizedBox(
+//           width: 140,
+//           child: Text(
+//             label,
+//             style: const TextStyle(
+//               fontWeight: FontWeight.bold,
+//               fontSize: 16,
+//               color: Colors.blueGrey,
+//             ),
+//           ),
+//         ),
+//         Expanded(
+//           child: Container(
+//             padding: const EdgeInsets.all(8),
+//             decoration: BoxDecoration(
+//               color: Colors.blue[50],
+//               borderRadius: BorderRadius.circular(8),
+//               border: Border.all(
+//                 color: Colors.blueAccent,
+//                 width: 1,
+//               ),
+//             ),
+//             child: TextField(
+//               controller: controller,
+//               style: const TextStyle(
+//                 fontSize: 14,
+//                 color: Colors.black87,
+//               ),
+//               decoration: const InputDecoration(
+//                 border: InputBorder.none,
+//                 hintText: 'Enter value...',
+//               ),
+//             ),
+//           ),
+//         ),
+//       ],
+//     ),
+//   );
+// }
+

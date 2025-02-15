@@ -20,7 +20,8 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text("Home"),
         centerTitle: true,
-        backgroundColor: Color(0xFF3D5AFE),  // Rich blue color for the app bar
+        backgroundColor: Color(0xFF3D5AFE),
+        // Rich blue color for the app bar
         titleTextStyle: const TextStyle(color: Colors.white),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -40,33 +41,52 @@ class _HomePageState extends State<HomePage> {
                   mainAxisSpacing: 16,
                   childAspectRatio: 1,
                 ),
-                itemCount: 8,  // Number of tiles
+                itemCount: 8, // Number of tiles
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
                       // Navigate based on the index
                       switch (index) {
                         case 0:
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => PermissionManagementPage()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      PermissionManagementPage()));
                           break;
                         case 1:
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectManagementScreen()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      ProjectManagementScreen()));
                           break;
                         case 2:
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => LocationCostCreate()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LocationCostCreate()));
                           break;
                         case 3:
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => LocationManagement()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LocationManagement()));
 
                           break;
-                        case 4:
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => AccountSetupPage()));
+                        case 7:
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AccountSetupPage()));
                           break;
                       }
                     },
                     child: Card(
                       elevation: 6,
-                      color: Color(0xFF1976D2),  // Deep blue for cards, maintaining contrast
+                      color: Color(
+                          0xFF1976D2),
+                      // Deep blue for cards, maintaining contrast
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -88,24 +108,30 @@ class _HomePageState extends State<HomePage> {
                                 ? Icons.work
                                 : FontAwesomeIcons.cogs,
                             size: 40,
-                            color: Colors.white,  // Icon color set to white for better contrast
+                            color: Colors
+                                .white, // Icon color set to white for better contrast
                           ),
                           const SizedBox(height: 8),
                           Text(
                             index == 0
                                 ? 'Permission Manage'
                                 : index == 1
-                                ? 'Project Management'
+                                ? 'Project Managements'
                                 : index == 2
-                                ? 'Location Management'
+                                ? 'Location Managements'
                                 : index == 3
                                 ? 'Project Cost Management'
                                 : index == 4
                                 ? 'Index 4'
+                                : index == 5
+                                ? 'Index 5'
+                                : index == 6
+                                ? 'Index 6'
                                 : 'Account Setup',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,  // Font size adjusted for better balance
+                              fontSize:
+                              16, // Font size adjusted for better balance
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,

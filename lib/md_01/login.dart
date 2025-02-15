@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../env/DialogBoxs.dart';
+import '../env/input_widget.dart';
 import '../env/print_debug.dart';
 import '../env/user_data.dart';
 
@@ -173,35 +174,12 @@ class _LoginAppState extends State<LoginApp> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: _userName,
-                    decoration: InputDecoration(
-                      labelText: 'User Name',
-                      hintText: "Kasun@Rockyholding.com",
-                      prefixIcon:
-                          const Icon(Icons.email_outlined), // Use prefixIcon
-                      border: OutlineInputBorder(
-                        // Added border
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextField(
-                    controller: _password,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Your Password',
-                      prefixIcon:
-                          const Icon(Icons.password_rounded), // Use prefixIcon
-                      border: OutlineInputBorder(
-                        // Added border
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+
+                  BuildTextField(_userName, 'User Name',
+                      'Enter your user name', Icons.person, true, 20),
+                  BuildPwdTextField(_password, 'Password',
+                      'Your password', Icons.password_rounded, true, 20),
+
                   ElevatedButton(
                     onPressed: () {
                       loginSystem();
