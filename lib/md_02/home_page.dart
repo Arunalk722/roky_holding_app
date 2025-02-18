@@ -4,6 +4,7 @@ import 'package:roky_holding/md_01/account_setup.dart';
 import 'package:roky_holding/md_02/permission_management.dart';
 import 'package:roky_holding/md_03/location_management.dart';
 import 'package:roky_holding/md_03/location_wise_estimation.dart';
+import 'package:roky_holding/md_03/material_create.dart';
 import 'package:roky_holding/md_03/project_management.dart';
 
 class HomePage extends StatefulWidget {
@@ -74,6 +75,13 @@ class _HomePageState extends State<HomePage> {
                                   builder: (context) => LocationManagement()));
 
                           break;
+                        case 4:
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => MaterialCreate()));
+
+                          break;
                         case 7:
                           Navigator.push(
                               context,
@@ -103,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                                 : index == 3
                                 ? FontAwesomeIcons.house
                                 : index == 4
-                                ? FontAwesomeIcons.penToSquare
+                                ? FontAwesomeIcons.productHunt
                                 : index == 5
                                 ? Icons.work
                                 : FontAwesomeIcons.cogs,
@@ -122,7 +130,7 @@ class _HomePageState extends State<HomePage> {
                                 : index == 3
                                 ? 'Project Cost Management'
                                 : index == 4
-                                ? 'Index 4'
+                                ? 'Material Create'
                                 : index == 5
                                 ? 'Index 5'
                                 : index == 6

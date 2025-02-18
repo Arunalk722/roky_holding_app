@@ -20,17 +20,18 @@ class _LocationManagementState extends State<LocationManagement> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadActiveCosting();
+      _loadActiveWorkList();
     });
   }
 
-  final List<dynamic> _activeProjects = [];
-  List<dynamic> _activeCostMap = [];
-  bool _isLoadingProjects = false;
+  final List<dynamic> _activeWorksList = [];
+  List<dynamic> _activeWorkMap = [];
 
-  Future<void> _loadActiveCosting() async {
+  bool _isLoadingWorksList = false;
+
+  Future<void> _loadActiveWorkList() async {
     setState(() {
-      _isLoadingProjects = true;
+      _isLoadingWorksList = true;
     });
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading items');
@@ -41,7 +42,7 @@ class _LocationManagementState extends State<LocationManagement> {
       }
 
       String reqUrl =
-          '${APIHost().APIURL}/location_controller.php/project_cost_list';
+          '${APIHost().APIURL}/material_controller.php/material_work_list';
       final response = await http.post(
         Uri.parse(reqUrl),
         headers: {
@@ -56,9 +57,9 @@ class _LocationManagementState extends State<LocationManagement> {
         final responseData = jsonDecode(response.body);
         if (responseData['status'] == 200) {
           setState(() {
-            _activeCostMap = responseData['data'] ?? [];
-            _dropdownCostType = _activeCostMap
-                .map<String>((item) => item['cost_name'].toString())
+            _activeWorkMap = responseData['data'] ?? [];
+            _dropdownWorkType = _activeWorkMap
+                .map<String>((item) => item['work_name'].toString())
                 .toList();
           });
         } else {
@@ -81,7 +82,7 @@ class _LocationManagementState extends State<LocationManagement> {
       PD.pd(text: e.toString());
     } finally {
       setState(() {
-        _isLoadingProjects = false;
+        _isLoadingWorksList = false;
       });
 
       if (Navigator.canPop(context)) {
@@ -91,8 +92,8 @@ class _LocationManagementState extends State<LocationManagement> {
   }
 
   // Dropdown values and suggestions (replace with your actual data)
-  String? _selectedValueCostType;
-  List<String> _dropdownCostType = [];
+  String? _selectedValueWorkType;
+  List<String> _dropdownWorkType = [];
 
   String? _selectedDropdown2;
   final List<String> _dropdown2Suggestions = [
@@ -193,7 +194,7 @@ class _LocationManagementState extends State<LocationManagement> {
                 ListTile(
                   title: Center(
                     child: Text(
-                      'Create Locations',
+                      'Estimation Management',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
@@ -216,33 +217,14 @@ class _LocationManagementState extends State<LocationManagement> {
                   runSpacing: 15,
                   children: [
                     CustomDropdown(
-                      label: 'Select Cost Type',
-                      suggestions: _dropdownCostType,
+                      label: 'Select Work Type',
+                      suggestions: _dropdownWorkType,
                       icon: Icons.category_sharp,
                       controller: _dropdown1Controller,
                       onChanged: (value) {
-                        _selectedValueCostType = value;
+                        _selectedValueWorkType = value;
                       },
                     ),
-                    AutoSuggestionField(
-                      label: 'Select Cost Type',
-                      suggestions: _dropdown2Suggestions.isEmpty
-                          ? ['Loading...']
-                          : _dropdown2Suggestions, // Show loading text if empty
-                      controller: _dropdown1Controller,
-                      onChanged: (value) {
-                        PD.pd(text: "Typed Location: $value");
-                      },
-                    ),
-
-                    // buildTextField(_txtProjectIdCostController, 'Project ID', 'Project ID', Icons.key, false),
-                    // buildTextField(_txtTenderController, 'Tender', 'Enter tender number', Icons.receipt_long, true),
-                    //  buildTextField(_txtProjectNameController, 'Project Name', 'Enter project name', Icons.business, true),
-                    //  buildNumberField(_txtCivilWorkCostController, 'Civil Work Cost', 'Enter cost', Icons.engineering, true),
-                    //  buildNumberField(_txtMaterialCostController, 'Material Cost', 'Enter cost', Icons.shopping_cart, true),
-                    //  buildNumberField(_txtAllocatedCostController, 'Allocated Cost', 'Enter cost', Icons.monetization_on, true),
-                    //  buildNumberField(_txtTenderCostController, 'Tender Cost', 'Enter cost', Icons.attach_money, true),
-                    //  _buildCheckboxes(),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -262,7 +244,7 @@ class _LocationManagementState extends State<LocationManagement> {
           PD.pd(text: "Form is valid!");
           PD.pd(
               text:
-                  "Selected Cost Type: $_selectedValueCostType"); // Print selected cost type
+                  "Selected Work Type: $_selectedValueWorkType");
 
           YNDialogCon.ynDialogMessage(
             context,
@@ -318,20 +300,20 @@ class _LocationManagementState extends State<LocationManagement> {
   }
 
   Widget _buildActiveProjectsList() {
-    if (_isLoadingProjects) {
+    if (_isLoadingWorksList) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_activeProjects.isEmpty) {
+    if (_activeWorksList.isEmpty) {
       return const Center(child: Text('No active costing found.'));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeProjects.length,
+      itemCount: _activeWorksList.length,
       itemBuilder: (context, index) {
-        final project = _activeProjects[index];
+        final project = _activeWorksList[index];
         return Card(
           // ... (card styling)
           child: InkWell(

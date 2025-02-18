@@ -28,11 +28,11 @@ class _LoginAppState extends State<LoginApp> {
     super.setState(() {
       _userName.text = 'aruna';
       _password.text = '123';
-      PD.pd(text: logo);
+     // PD.pd(text: logo);
     });
   }
 
-  final String logo = '${APIHost().APIImage}/logo.png';
+ // final String logo = '${APIHost().APIImage}/logo.png';
 
   Future<void> loginSystem() async {
     WaitDialog.showWaitDialog(context, message: 'sign in');
@@ -152,10 +152,14 @@ class _LoginAppState extends State<LoginApp> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Added Image at the top
-                  Image.network(
-                    logo, // Replace with your image path
-                    height: 80, // Adjust height as needed
-                  ),
+                Image.network(
+                'https://rokyholdings.com/wp-content/themes/rokyholdings/images/web-logo.png',
+                height: 80,
+                errorBuilder: (context, object, stackTrace) {
+                  print('Image load failed: $object, Stack trace: $stackTrace');  // Print the error to the console
+                  return const Icon(Icons.error); // Show an error icon
+                },
+              ),
                   const SizedBox(height: 20),
                   const Text(
                     "WELCOME TO THE",

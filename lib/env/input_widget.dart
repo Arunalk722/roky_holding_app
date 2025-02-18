@@ -93,6 +93,7 @@ Widget BuildTextField(TextEditingController controller, String label,
           child: TextFormField(
             maxLength: MaxLenth,
             controller: controller,
+
             decoration: InputTextDecoration.inputDecoration(
               lable_Text: label,
               hint_Text: hint,
@@ -305,11 +306,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    return SizedBox(
         child: DropdownButtonFormField<String>(
           decoration: InputDecoration(
             labelText: widget.label,
@@ -336,7 +333,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
           validator: (value) =>
               value == null || value.isEmpty ? 'Please select a value' : null,
         ),
-      ),
+
     );
   }
 }
