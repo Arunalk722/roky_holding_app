@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:roky_holding/env/app_bar.dart';
@@ -39,7 +40,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
   Future<void> _loadActiveWorkList() async {
     setState(() {
       _isLoadingWorksList = true;
-
     });
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading works');
@@ -70,7 +70,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
                 .map<String>((item) => item['work_name'].toString())
                 .toList();
           });
-          _loadActiveCostList();
         } else {
           final String message = responseData['message'] ?? 'Error';
           PD.pd(text: message);
@@ -101,7 +100,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
   }
 
 
-  Future<void> _loadActiveCostList() async {
+  Future<void> _loadActiveCostList(String? _workName) async {
     setState(() {
       _isLoadingCostList = true;
     });
@@ -120,7 +119,9 @@ class _MaterialCreateState extends State<MaterialCreate> {
         headers: {
           "Content-Type": "application/json",
         },
-        body: jsonEncode({"Authorization": token}),
+        body: jsonEncode({"Authorization": token,
+          "work_name":_workName,
+        }),
       );
 
       PD.pd(text: reqUrl);
@@ -162,6 +163,80 @@ class _MaterialCreateState extends State<MaterialCreate> {
       }
     }
   }
+
+
+  final List<dynamic> _activeMaterialList = [];
+   List<dynamic> _activeMaterialListMap = [];
+   bool _isLoadingMaterials = false;
+
+  Future<void> _loadMaterials(String? _workName,String? _costCategory) async {
+
+
+    setState(() {
+      _isLoadingMaterials = true;
+    });
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading works');
+
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+
+      String reqUrl =
+          '${APIHost().APIURL}/material_controller.php/list_of_category_material';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": token,
+          "work_name":_workName,
+          "cost_category":_costCategory
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          setState(() {
+            _activeMaterialListMap = responseData['data'] ?? [];
+            _activeMaterialList.clear();
+            _activeMaterialList.addAll(_activeMaterialListMap);
+            PD.pd(text: _activeMaterialListMap.toString());
+          });
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isLoadingMaterials = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
 
 
   String? _selectedValueWorkType;
@@ -391,6 +466,10 @@ class _MaterialCreateState extends State<MaterialCreate> {
                       controller: _costTypeDropdownController,
                       onChanged: (value) {
                         _selectedValueWorkType = value;
+                        _loadActiveCostList(value);
+                        setState(() {
+
+                        });
                       },
                     ),
                     CustomDropdown(
@@ -400,6 +479,9 @@ class _MaterialCreateState extends State<MaterialCreate> {
                       controller: _costCategoryDropDownController,
                       onChanged: (value) {
                         _selectedValueCostCategory = value;
+                        PD.pd(text: _selectedValueWorkType.toString());
+
+                        _loadMaterials(_selectedValueWorkType.toString(),_selectedValueCostCategory.toString());
                       },
                     ),
 
@@ -475,10 +557,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
   Widget _buildSubmitButton() {
     return ElevatedButton(
       onPressed: () {
-          PD.pd(text: "Form is valid!");
-          PD.pd(
-              text:
-              "Selected Work Type: $_allowUserToEdit");
 
           YNDialogCon.ynDialogMessage(
             context,
@@ -525,29 +603,28 @@ class _MaterialCreateState extends State<MaterialCreate> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            _buildActiveProjectsList(),
+            _buildActiveMaterialList(),
           ],
         ),
       ),
     );
   }
-  Widget _buildActiveProjectsList() {
-    if (_isLoadingWorksList) {
+  Widget _buildActiveMaterialList() {
+    if (_isLoadingMaterials) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_activeWorksList.isEmpty) {
+    if (_activeMaterialListMap.isEmpty) {
       return const Center(child: Text('No active materials found.'));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeWorksList.length,
+      itemCount: _activeMaterialListMap.length,
       itemBuilder: (context, index) {
-        final project = _activeWorksList[index];
+        final material = _activeMaterialListMap[index];
         return Card(
-          // ... (card styling)
           child: InkWell(
             onTap: () {},
             child: Padding(
@@ -561,7 +638,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          project['project_name'] ?? 'Project Name',
+                          material['material_name'] ?? 'Material Name',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -569,75 +646,43 @@ class _MaterialCreateState extends State<MaterialCreate> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tender: ${project['tender'] ?? 'Tender Number'}',
+                          'Work Type: ${material['work_name'] ?? 'Unknown'}',
                           style: const TextStyle(fontSize: 14),
                         ),
-                        // Add more details here if needed
+                        Text(
+                          'Qty: ${material['qty'] ?? 'Unknown'}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          'Amount: ${material['amount'] ?? 'Unknown'}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
                       ],
                     ),
                   ),
-                  // View Button
                   IconButton(
-                    icon: const Icon(Icons.edit),
+                    icon: Icon(material['is_active'] == 1
+                        ? Icons.visibility
+                        : Icons.visibility_off_outlined),
+                    color: material['is_active'] == 1 ? Colors.blue : Colors.red,
                     onPressed: () {
-                    
-                      setState(() {});
-                      PD.pd(text: "View project: ${project['tender']}");
+                      PD.pd(text: "Toggled visibility for: ${material['material_name']}");
                     },
                   ),
                   IconButton(
-                    icon: Icon(project['user_visible'] as int == 1
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility),
-                    color: project['user_visible'] as int == 1
-                        ? Colors.blue
-                        : Colors.red,
-                    onPressed: () async {
-                      int vis = project['user_visible'] as int;
-                      String mg =
-                      vis == 0 ? 'visibility enable' : 'visibility disable';
-                      int result = await YNDialogCon.ynDialogMessage(
+                    icon: Icon( Icons.edit),
+                    color: Colors.blue,
+                    onPressed: () {
+                      _showMaterialInputDialog(
                         context,
-                        messageTitle: mg,
-                        messageBody:
-                        "Are you sure you want to $mg project ${project['tender']}?",
-                        icon: vis == 0
-                            ? Icons.visibility
-                            : Icons.visibility_off_outlined,
-                        iconColor: Colors.orange,
-                        btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
-                        btnClose: "Cancel",
-                      );
-                      if (result == 1) {
-                        //  _changeVisibility(context, '${project['idtbl_projects']}', project['user_visible'] =='0'?false: true);
-                      }
-                    },
-                  ),
-                  // Delete Button
-                  IconButton(
-                    icon: const Icon(Icons.delete,
-                        color: Colors.red), // Red color for delete action
-                    onPressed: () async {
-                      int result = await YNDialogCon.ynDialogMessage(
-                        context,
-                        messageTitle: "Confirm Deletion",
-                        messageBody:
-                        "Are you sure you want to delete project ${project['tender']}?",
-                        icon: Icons.warning,
-                        iconColor: Colors.orange,
-                        btnDone: "Yes, Delete",
-                        btnClose: "Cancel",
+                        material['idtbl_material_list'],
+                        material['material_name'],
+                        double.tryParse(material['amount'].toString()) ?? 0.0, // Safely convert to double
+                        double.tryParse(material['qty'].toString()) ?? 0.0,
                       );
 
-                      if (result == 1) {
-                        PD.pd(
-                            text:
-                            "Deleting project: ${project['idtbl_projects']}");
-                        //_deleteProject(context,'${project['idtbl_projects']}'); // Call delete function after confirmation
-                      }
                     },
                   ),
-                  // const Icon(Icons.arrow_forward_ios, size: 16), // Optional arrow
                 ],
               ),
             ),
@@ -647,5 +692,154 @@ class _MaterialCreateState extends State<MaterialCreate> {
     );
   }
 }
+class MaterialInputDialog extends StatefulWidget {
+  final int itemId;
+  final String materialName;
+  final double amount;
+  final double qty;
 
+  const MaterialInputDialog({
+    Key? key,
+    required this.itemId,
+    required this.materialName,
+    required this.amount,
+    required this.qty,
+  }) : super(key: key);
 
+  @override
+  _MaterialInputDialogState createState() => _MaterialInputDialogState();
+}
+
+class _MaterialInputDialogState extends State<MaterialInputDialog> {
+  late TextEditingController _qtyController;
+  late TextEditingController _amountController;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyController = TextEditingController(text: widget.qty.toString());
+    _amountController = TextEditingController(text: widget.amount.toString());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.materialName),
+      content: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _qtyController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Quantity'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Amount'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final double updatedQty = double.tryParse(_qtyController.text) ?? 0.0;
+            final double updatedAmount = double.tryParse(_amountController.text) ?? 0.0;
+
+            changePrice(context, widget.itemId, updatedQty, updatedAmount);
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      elevation: 5.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+}
+
+Future<void> changePrice(BuildContext context, int materialId, double qty, double amount) async {
+
+  WaitDialog.showWaitDialog(context, message: 'Updating Price');
+  try {
+    WaitDialog.showWaitDialog(context, message: 'Updating Price');
+    String? token = APIToken().token;
+    if (token == null || token.isEmpty) {
+      PD.pd(text: "Authentication token is missing.");
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('${APIHost().APIURL}/material_controller.php/edit_price'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "Authorization": token,
+        "idtbl_material_list": materialId,
+        "qty": qty,
+        "amount": amount,
+        "change_by": UserCredentials().UserName
+      }),
+    );
+
+    WaitDialog.hideDialog(context);
+    final responseData = jsonDecode(response.body);
+    if (response.statusCode == 200 && responseData['status'] == 200) {
+      OneBtnDialog.oneButtonDialog(context,
+          title: "Successful",
+          message: responseData['message'],
+          btnName: 'Ok',
+          icon: Icons.verified_outlined,
+          iconColor: Colors.black,
+          btnColor: Colors.green);
+    } else {
+      OneBtnDialog.oneButtonDialog(context,
+          title: 'Error',
+          message: responseData['message'] ?? 'Update failed',
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black);
+    }
+  } catch (e) {
+    WaitDialog.hideDialog(context);
+    ExceptionDialog.exceptionDialog(
+      context,
+      title: 'Error',
+      message: e.toString(),
+      btnName: 'OK',
+      icon: Icons.error,
+      iconColor: Colors.red,
+      btnColor: Colors.black,
+    );
+  }
+}
+
+Future<void> _showMaterialInputDialog(
+    BuildContext context, int itemId, String materialName, double amount, double qty) async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return MaterialInputDialog(
+        itemId: itemId,
+        materialName: materialName,
+        amount: amount,
+        qty: qty,
+      );
+    },
+  );
+}

@@ -11,6 +11,7 @@ class APIToken {
   factory APIToken() {
     return _instance;
   }
+  //token
   set token(String? value) => _token = value;
   String? get token => _token;
 }
