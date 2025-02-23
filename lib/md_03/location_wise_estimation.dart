@@ -16,25 +16,159 @@ class LocationManagement extends StatefulWidget {
 
 class _LocationManagementState extends State<LocationManagement> {
   final _formKey = GlobalKey<FormState>();
+
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadActiveWorkList();
+      _dropDownToProject();
     });
   }
 
+  //project list dropdown
+  List<dynamic> _activeProjectDropDownMap = [];
+  bool _isProjectsDropDown = false;
+  Future<void> _dropDownToProject() async {
+    setState(() {
+      _isProjectsDropDown = true;
+    });
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading project');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+      String reqUrl = '${APIHost().APIURL}/project_management.php/listAll';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"Authorization": token}),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          setState(() {
+            _activeProjectDropDownMap = responseData['data'] ?? [];
+            _dropdownProjects = _activeProjectDropDownMap
+                .map<String>((item) => item['project_name'].toString())
+                .toList();
+          });
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isProjectsDropDown = false;
+      });
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+    }
+
+  }
+  String? _selectedProjectName;
+  List<String> _dropdownProjects = [];
+
+  //project location list dropdown
+  List<dynamic> _activeProjectLocationDropDownMap = [];
+  bool _isProjectLocationDropDown = false;
+  Future<void> _dropDownToProjectLocation(String project) async {
+    setState(() {
+      _isProjectLocationDropDown = true;
+    });
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading location');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+      String reqUrl = '${APIHost().APIURL}/location_controller.php/project_location_list';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"Authorization": token,
+          "project_name": project}),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          setState(() {
+            _activeProjectLocationDropDownMap = responseData['data'] ?? [];
+            _dropdownProjectLocation = _activeProjectLocationDropDownMap
+                .map<String>((item) => item['location_name'].toString())
+                .toList();
+          });
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isProjectLocationDropDown = false;
+      });
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+    }
+
+  }
+  String? _selectedProjectLocationName;
+  List<String> _dropdownProjectLocation = [];
+
+  //work list
   final List<dynamic> _activeWorksList = [];
-  List<dynamic> _activeWorkMap = [];
-
+  List<dynamic> _activeWorkListMap = [];
   bool _isLoadingWorksList = false;
-
+  String? _selectedValueWorkType;
+  List<String> _dropdownWorkType = [];
   Future<void> _loadActiveWorkList() async {
     setState(() {
       _isLoadingWorksList = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading items');
+      WaitDialog.showWaitDialog(context, message: 'Loading works');
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
@@ -57,8 +191,8 @@ class _LocationManagementState extends State<LocationManagement> {
         final responseData = jsonDecode(response.body);
         if (responseData['status'] == 200) {
           setState(() {
-            _activeWorkMap = responseData['data'] ?? [];
-            _dropdownWorkType = _activeWorkMap
+            _activeWorkListMap = responseData['data'] ?? [];
+            _dropdownWorkType = _activeWorkListMap
                 .map<String>((item) => item['work_name'].toString())
                 .toList();
           });
@@ -91,20 +225,161 @@ class _LocationManagementState extends State<LocationManagement> {
     }
   }
 
-  // Dropdown values and suggestions (replace with your actual data)
-  String? _selectedValueWorkType;
-  List<String> _dropdownWorkType = [];
 
-  String? _selectedDropdown2;
-  final List<String> _dropdown2Suggestions = [
-    'Value A',
-    'Value B',
-    'Value C',
-    'Value D',
-    'Value E'
-  ];
+  //cost category
+  String? _selectedValueCostCategory;
+  List<String> _dropdownCostCategory = [];
+  final List<dynamic> _activeCostList = [];
+  List<dynamic> _activeCostListMap = [];
+  bool _isLoadingCostList=false;
+  Future<void> _loadActiveCostList(String? _workName) async {
+    setState(() {
+      _isLoadingCostList = true;
+    });
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading works');
 
-  // Text field controllers and validation
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+
+      String reqUrl =
+          '${APIHost().APIURL}/material_controller.php/cost_category_list';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"Authorization": token,
+          "work_name":_workName,
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          setState(() {
+            _activeCostListMap = responseData['data'] ?? [];
+            _dropdownCostCategory = _activeCostListMap
+                .map<String>((item) => item['cost_category'].toString())
+                .toList();
+          });
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isLoadingCostList = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+
+  String? _selectedValueMaterial;
+  List<String> _dropdownMaterial = [];
+  final List<dynamic> _activeMaterialList = [];
+  List<dynamic> _activeMaterialListMap = [];
+  bool _isLoadingMaterialList=false;
+  Future<void> _loadActiveMaterialList(String? _workName,String? _costCategory) async {
+   // _materialDropDownController.text='';
+    _selectedValueMaterial = '';
+    _dropdownMaterial.clear();
+    _activeMaterialList.clear();
+    _activeMaterialListMap.clear();
+    _isLoadingMaterialList=false;
+
+    setState(() {
+      _isLoadingMaterialList = true;
+    });
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+      String reqUrl =
+          '${APIHost().APIURL}/material_controller.php/list_of_category_material';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: jsonEncode({
+          "Authorization": token,
+          "work_name":_workName,
+          "cost_category":_costCategory
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          setState(() {
+            _activeMaterialListMap = responseData['data'] ?? [];
+            _dropdownMaterial = _activeMaterialListMap
+                .map<String>((item) => item['material_name'].toString())
+                .toList();
+          });
+          //PD.pd(text: _dropdownMaterial.toString());
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isLoadingMaterialList = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+
+
+
+  //Text field controllers and validation
   final _locationNameController = TextEditingController();
   final _civilWorkCostController = TextEditingController();
   final _filtersCostController = TextEditingController();
@@ -113,8 +388,11 @@ class _LocationManagementState extends State<LocationManagement> {
   final _materialCostController = TextEditingController();
   final _equipmentCostController = TextEditingController();
   final _otherCostController = TextEditingController();
-  final _dropdown1Controller = TextEditingController();
-  final _dropdown2Controller = TextEditingController();
+  final _projectDropdownController = TextEditingController();
+  final _projectLocationDropdownController = TextEditingController();
+  final _materialDropDownController = TextEditingController();
+  final _costTypeDropdownController = TextEditingController();
+  final _costCategoryDropDownController = TextEditingController();
 
   double _totalCost = 0;
 
@@ -217,12 +495,56 @@ class _LocationManagementState extends State<LocationManagement> {
                   runSpacing: 15,
                   children: [
                     CustomDropdown(
-                      label: 'Select Work Type',
+                      label: 'Select Project',
+                      suggestions: _dropdownProjects,
+                      icon: Icons.category_sharp,
+                      controller: _projectDropdownController,
+                      onChanged: (value) {
+                        _selectedProjectName = value;
+                        _dropDownToProjectLocation(value.toString());
+                      },
+                    ),
+                    CustomDropdown(
+                      label: 'Select Location',
+                      suggestions: _dropdownProjectLocation,
+                      icon: Icons.location_city,
+                      controller: _projectLocationDropdownController,
+                      onChanged: (value) {
+                        _selectedProjectLocationName = value;
+                        _loadActiveWorkList();
+                      },
+                    ),
+
+
+                    CustomDropdown(
+                      label: 'Work Type',
                       suggestions: _dropdownWorkType,
                       icon: Icons.category_sharp,
-                      controller: _dropdown1Controller,
+                      controller: _costTypeDropdownController,
                       onChanged: (value) {
                         _selectedValueWorkType = value;
+                        _loadActiveCostList(value);
+                      },
+                    ),
+                    CustomDropdown(
+                      label: 'Select Cost Category',
+                      suggestions: _dropdownCostCategory,
+                      icon: Icons.celebration,
+                      controller: _costCategoryDropDownController,
+                      onChanged: (value) {
+                        _selectedValueCostCategory = value;
+                        PD.pd(text: _selectedValueWorkType.toString());
+                        _loadActiveMaterialList( _selectedValueWorkType.toString(),value.toString());
+                      },
+                    ),
+                    CustomDropdown(
+                      label: 'Select Material',
+                      suggestions: _dropdownMaterial,
+                      icon: Icons.token,
+                      controller: _materialDropDownController,
+                      onChanged: (value) {
+                        _selectedValueMaterial = value;
+                      //  PD.pd(text: _selectedValueWorkType.toString());
                       },
                     ),
                   ],

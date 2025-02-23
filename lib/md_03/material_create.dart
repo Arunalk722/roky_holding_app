@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:roky_holding/env/app_bar.dart';
@@ -27,16 +26,12 @@ class _MaterialCreateState extends State<MaterialCreate> {
     });
   }
 
+  //work list
   final List<dynamic> _activeWorksList = [];
   List<dynamic> _activeWorkListMap = [];
   bool _isLoadingWorksList = false;
-
-
-
-  final List<dynamic> _activeCostList = [];
-  List<dynamic> _activeCostListMap = [];
-  bool _isLoadingCostList=false;
-
+  String? _selectedValueWorkType;
+  List<String> _dropdownWorkType = [];
   Future<void> _loadActiveWorkList() async {
     setState(() {
       _isLoadingWorksList = true;
@@ -72,7 +67,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
           });
         } else {
           final String message = responseData['message'] ?? 'Error';
-          PD.pd(text: message);
+        //  PD.pd(text: message);
           OneBtnDialog.oneButtonDialog(
             context,
             title: 'Error',
@@ -100,6 +95,12 @@ class _MaterialCreateState extends State<MaterialCreate> {
   }
 
 
+  //active cost list
+  final List<dynamic> _activeCostList = [];
+  List<dynamic> _activeCostListMap = [];
+  bool _isLoadingCostList=false;
+  String? _selectedValueCostCategory;
+  List<String> _dropdownCostCategory = [];
   Future<void> _loadActiveCostList(String? _workName) async {
     setState(() {
       _isLoadingCostList = true;
@@ -137,7 +138,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
           });
         } else {
           final String message = responseData['message'] ?? 'Error';
-          PD.pd(text: message);
+        //  PD.pd(text: message);
           OneBtnDialog.oneButtonDialog(
             context,
             title: 'Error',
@@ -165,13 +166,11 @@ class _MaterialCreateState extends State<MaterialCreate> {
   }
 
 
+  //list of materials
   final List<dynamic> _activeMaterialList = [];
-   List<dynamic> _activeMaterialListMap = [];
-   bool _isLoadingMaterials = false;
-
+  List<dynamic> _activeMaterialListMap = [];
+  bool _isLoadingMaterials = false;
   Future<void> _loadMaterials(String? _workName,String? _costCategory) async {
-
-
     setState(() {
       _isLoadingMaterials = true;
     });
@@ -206,7 +205,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
             _activeMaterialListMap = responseData['data'] ?? [];
             _activeMaterialList.clear();
             _activeMaterialList.addAll(_activeMaterialListMap);
-            PD.pd(text: _activeMaterialListMap.toString());
+          //  PD.pd(text: _activeMaterialListMap.toString());
           });
         } else {
           final String message = responseData['message'] ?? 'Error';
@@ -238,17 +237,10 @@ class _MaterialCreateState extends State<MaterialCreate> {
   }
 
 
-
-  String? _selectedValueWorkType;
-  List<String> _dropdownWorkType = [];
   bool _allowUserToEdit=false;
-
-  String? _selectedValueCostCategory;
-  List<String> _dropdownCostCategory = [];
 
   final _costTypeDropdownController = TextEditingController();
   final _costCategoryDropDownController = TextEditingController();
-
   final TextEditingController _materialName = TextEditingController();
   final TextEditingController _materialCost= TextEditingController();
   final TextEditingController _qty= TextEditingController();
@@ -386,6 +378,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
         btnColor: Colors.black,
       );
     }
+    _loadMaterials(_selectedValueWorkType.toString(), _selectedValueCostCategory.toString());
   }
 
   @override
@@ -421,7 +414,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
       ),
     );
   }
-
   Widget _buildCreateLocationForm() {
     return Card(
       elevation: 5,
@@ -529,7 +521,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
       ),
     );
   }
-
   Widget _buildCheckboxes() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -553,7 +544,6 @@ class _MaterialCreateState extends State<MaterialCreate> {
       ],
     );
   }
-
   Widget _buildSubmitButton() {
     return ElevatedButton(
       onPressed: () {
@@ -709,7 +699,6 @@ class MaterialInputDialog extends StatefulWidget {
   @override
   _MaterialInputDialogState createState() => _MaterialInputDialogState();
 }
-
 class _MaterialInputDialogState extends State<MaterialInputDialog> {
   late TextEditingController _qtyController;
   late TextEditingController _amountController;
@@ -772,7 +761,6 @@ class _MaterialInputDialogState extends State<MaterialInputDialog> {
     super.dispose();
   }
 }
-
 Future<void> changePrice(BuildContext context, int materialId, double qty, double amount) async {
 
   WaitDialog.showWaitDialog(context, message: 'Updating Price');
@@ -828,9 +816,7 @@ Future<void> changePrice(BuildContext context, int materialId, double qty, doubl
     );
   }
 }
-
-Future<void> _showMaterialInputDialog(
-    BuildContext context, int itemId, String materialName, double amount, double qty) async {
+Future<void> _showMaterialInputDialog(BuildContext context, int itemId, String materialName, double amount, double qty) async {
   showDialog(
     context: context,
     builder: (BuildContext context) {

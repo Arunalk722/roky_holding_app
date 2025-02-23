@@ -22,15 +22,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
   final TextEditingController _txtLocationName = TextEditingController();
   final TextEditingController _txtTender = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _dropDownToProject();
-    });
-  }
-  Future<void> updateLocation(BuildContext context, int idtbl_project_location, int project_id,
-      String location_name, String is_active, String change_by) async {
+
+  Future<void> updateLocation(BuildContext context, int idtbl_project_location, int project_id,String location_name, String is_active, String change_by) async {
     try {
       WaitDialog.showWaitDialog(context, message: 'Updating location...');
 
@@ -157,12 +150,14 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     }
   }
 
-  List<dynamic> _activeDropDownMap = [];
-  bool _isDropDownToProjects = false;
 
+
+  //project list dropdown
+  List<dynamic> _activeProjectDropDownMap = [];
+  bool _isProjectsDropDown = false;
   Future<void> _dropDownToProject() async {
     setState(() {
-      _isDropDownToProjects = true;
+      _isProjectsDropDown = true;
     });
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading items');
@@ -187,8 +182,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         final responseData = jsonDecode(response.body);
         if (responseData['status'] == 200) {
           setState(() {
-            _activeDropDownMap = responseData['data'] ?? [];
-            _dropdownProjects = _activeDropDownMap
+            _activeProjectDropDownMap = responseData['data'] ?? [];
+            _dropdownProjects = _activeProjectDropDownMap
                 .map<String>((item) => item['project_name'].toString())
                 .toList();
           });
@@ -212,7 +207,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       PD.pd(text: e.toString());
     } finally {
       setState(() {
-        _isDropDownToProjects = false;
+        _isProjectsDropDown = false;
       });
 
       if (Navigator.canPop(context)) {
@@ -221,23 +216,33 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     }
   }
 
-  List<dynamic> _activeProjects = [];
-  bool _isLoadingProjects = false;
+  //select project dropdown
+  String? _selectedProjectName;
+  List<String> _dropdownProjects = [];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _dropDownToProject();
+    });
+  }
 
-
-  Future<void> _loadProjects(String project) async {
+  //project location list
+  List<dynamic> _activeProjectsLocationList = [];
+  bool _isProjectsLocationLoad = false;
+  Future<void> _loadProjectsLocationList(String project) async {
     setState(() {
-      _isLoadingProjects = true;
+      _txtTender.text="";
+      _txtLocationName.text ="";
+      _isProjectsLocationLoad = true;
     });
 
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading project');
-
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         return;
       }
-
       String reqUrl =
           '${APIHost().APIURL}/location_controller.php/project_location_list';
       final response = await http.post(
@@ -260,11 +265,10 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
           if (responseData['status'] == 200) {
             // Extract data from the response
             setState(() {
-              _activeProjects = List.from(responseData['data'] ?? []);
+              _activeProjectsLocationList = List.from(responseData['data'] ?? []);
             });
 
             // Print out the data for debugging
-            PD.pd(text: _activeProjects.toString());
           } else {
             final String message = responseData['message'] ?? 'Error';
             PD.pd(text: message);
@@ -288,7 +292,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       PD.pd(text: e.toString());
     } finally {
       setState(() {
-        _isLoadingProjects = false;
+        _isProjectsLocationLoad = false;
       });
 
       if (Navigator.canPop(context)) {
@@ -297,8 +301,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     }
   }
 
-  String? _selectedProjectName;
-  List<String> _dropdownProjects = [];
+
+
 
   // Text field controllers and validation
   final _txtLocationNameController = TextEditingController();
@@ -419,7 +423,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                       controller: _dropdown1Controller,
                       onChanged: (value) {
                         _selectedProjectName = value;
-                        _loadProjects(_selectedProjectName.toString());
+                        _loadProjectsLocationList(_selectedProjectName.toString());
                       },
                     ),
 
@@ -427,9 +431,6 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                         'Colombo water', Icons.create, true, 45),
                     BuildTextField(
                         _txtTender, 'Tender', 'TX00001', Icons.query_builder, true, 20),
-                    BuildNumberField(
-                        _txtTender, 'Location Estimation', '50000LKR', Icons.currency_exchange, true, 20),
-                    //  _buildCheckboxes(),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -495,7 +496,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                 icon: Icons.verified_outlined,
                 iconColor: Colors.black,
                 btnColor: Colors.green);
-            _loadProjects(_selectedProjectName.toString());
+            _loadProjectsLocationList(_selectedProjectName.toString());
           } else {
             final String message = responseData['message'] ?? 'Error';
             PD.pd(text: message);
@@ -633,20 +634,20 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
   }
 
   Widget _buildActiveProjectsList() {
-    if (_isLoadingProjects) {
+    if (_isProjectsLocationLoad) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_activeProjects.isEmpty) {
+    if (_activeProjectsLocationList.isEmpty) {
       return const Center(child: Text('No active costing found.'));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeProjects.length,
+      itemCount: _activeProjectsLocationList.length,
       itemBuilder: (context, index) {
-        final project = _activeProjects[index];
+        final project = _activeProjectsLocationList[index];
         TextEditingController _txtLocationNameController = TextEditingController(
             text: project['location_name']);
         TextEditingController _txtProjectName = TextEditingController(
@@ -672,8 +673,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        BuildTextFieldReadOnly(_txtProjectName, 'Project Name', '', Icons.construction, true, 20),
-                        BuildTextField(_txtLocationNameController, 'Location Name', '', Icons.pin_drop, true, 20),
+                        BuildTextFieldReadOnly(_txtProjectName, 'Project Name', '', Icons.construction, true, 45),
+                        BuildTextField(_txtLocationNameController, 'Location Name', '', Icons.pin_drop, true, 45),
 
 
                         // Row for Estimated Cost and Tender Cost
