@@ -84,8 +84,7 @@ class _BuildPwdTextFieldState extends State<_BuildPwdTextField> {
 
 
 
-Widget BuildTextField(TextEditingController controller, String label,
-    String hint, IconData icon, bool visible, int MaxLenth) {
+Widget BuildTextField(TextEditingController controller, String label,String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,
@@ -107,8 +106,7 @@ Widget BuildTextField(TextEditingController controller, String label,
           )));
 }
 
-Widget BuildTextFieldReadOnly(TextEditingController controller, String label,
-    String hint, IconData icon, bool visible, int MaxLenth) {
+Widget BuildTextFieldReadOnly(TextEditingController controller, String label, String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,

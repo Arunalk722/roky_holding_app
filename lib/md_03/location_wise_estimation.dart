@@ -6,6 +6,7 @@ import '../env/DialogBoxs.dart';
 import '../env/api_info.dart';
 import '../env/input_widget.dart';
 import '../env/print_debug.dart';
+import 'material_info.dart';
 
 class LocationManagement extends StatefulWidget {
   const LocationManagement({super.key});
@@ -25,6 +26,9 @@ class _LocationManagementState extends State<LocationManagement> {
       _dropDownToProject();
     });
   }
+
+
+
 
   //project list dropdown
   List<dynamic> _activeProjectDropDownMap = [];
@@ -303,7 +307,7 @@ class _LocationManagementState extends State<LocationManagement> {
   List<dynamic> _activeMaterialListMap = [];
   bool _isLoadingMaterialList=false;
   Future<void> _loadActiveMaterialList(String? _workName,String? _costCategory) async {
-   // _materialDropDownController.text='';
+   // _txtMaterialDropDown.text='';
     _selectedValueMaterial = '';
     _dropdownMaterial.clear();
     _activeMaterialList.clear();
@@ -380,46 +384,92 @@ class _LocationManagementState extends State<LocationManagement> {
 
 
   //Text field controllers and validation
-  final _locationNameController = TextEditingController();
-  final _civilWorkCostController = TextEditingController();
-  final _filtersCostController = TextEditingController();
-  final _serviceCostController = TextEditingController();
-  final _labourCostController = TextEditingController();
-  final _materialCostController = TextEditingController();
-  final _equipmentCostController = TextEditingController();
-  final _otherCostController = TextEditingController();
-  final _projectDropdownController = TextEditingController();
-  final _projectLocationDropdownController = TextEditingController();
-  final _materialDropDownController = TextEditingController();
-  final _costTypeDropdownController = TextEditingController();
-  final _costCategoryDropDownController = TextEditingController();
-
-  double _totalCost = 0;
+  
+  final _txtProjectDropdown = TextEditingController();
+  final _txtProjectLocationDropdown = TextEditingController();
+  final _txtMaterialDropDown = TextEditingController();
+  final _txtCostTypeDropdown = TextEditingController();
+  final _txtCostCategoryDropDown = TextEditingController();
+  final _txtQty = TextEditingController();
+  final _txtAmount = TextEditingController();
 
   @override
   void dispose() {
-    _locationNameController.dispose();
-    _civilWorkCostController.dispose();
-    _filtersCostController.dispose();
-    _serviceCostController.dispose();
-    _labourCostController.dispose();
-    _materialCostController.dispose();
-    _equipmentCostController.dispose();
-    _otherCostController.dispose();
     super.dispose();
   }
 
-  void _calculateTotalCost() {
-    setState(() {
-      _totalCost = 0;
-      _totalCost += double.tryParse(_civilWorkCostController.text) ?? 0;
-      _totalCost += double.tryParse(_filtersCostController.text) ?? 0;
-      _totalCost += double.tryParse(_serviceCostController.text) ?? 0;
-      _totalCost += double.tryParse(_labourCostController.text) ?? 0;
-      _totalCost += double.tryParse(_materialCostController.text) ?? 0;
-      _totalCost += double.tryParse(_equipmentCostController.text) ?? 0;
-      _totalCost += double.tryParse(_otherCostController.text) ?? 0;
-    });
+  String? _materialId;
+  String? _price;
+  String? qty;
+
+
+  Future<void> _loadMaterialInfo(String? _workName, String? _costCategory, String? _materialName) async {
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+
+      String reqUrl = '${APIHost().APIURL}/material_controller.php/get_material_info';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token, // Add the token to headers instead of the body
+        },
+        body: jsonEncode({
+          "work_name": _workName,
+          "cost_category": _costCategory,
+          "material_name": _materialName,
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['status'] == 200) {
+          // Parse the JSON data into a list of MaterialData objects
+          List<MaterialData> materialList = (responseData['data'] as List)
+              .map((item) => MaterialData.fromJson(item))
+              .toList();
+
+          setState(() {
+            _activeMaterialListMap = materialList; // Store the parsed data
+            _dropdownMaterial = materialList
+                .map<String>((item) => item.material_name)
+                .toList();
+          });
+
+          //PD.pd(text: _dropdownMaterial.toString());
+        } else {
+          final String message = responseData['message'] ?? 'Error';
+          PD.pd(text: message);
+          OneBtnDialog.oneButtonDialog(
+            context,
+            title: 'Error',
+            message: message,
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isLoadingMaterialList = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
   }
 
   @override
@@ -498,7 +548,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Project',
                       suggestions: _dropdownProjects,
                       icon: Icons.category_sharp,
-                      controller: _projectDropdownController,
+                      controller: _txtProjectDropdown,
                       onChanged: (value) {
                         _selectedProjectName = value;
                         _dropDownToProjectLocation(value.toString());
@@ -508,7 +558,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Location',
                       suggestions: _dropdownProjectLocation,
                       icon: Icons.location_city,
-                      controller: _projectLocationDropdownController,
+                      controller: _txtProjectLocationDropdown,
                       onChanged: (value) {
                         _selectedProjectLocationName = value;
                         _loadActiveWorkList();
@@ -520,7 +570,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Work Type',
                       suggestions: _dropdownWorkType,
                       icon: Icons.category_sharp,
-                      controller: _costTypeDropdownController,
+                      controller: _txtCostTypeDropdown,
                       onChanged: (value) {
                         _selectedValueWorkType = value;
                         _loadActiveCostList(value);
@@ -530,7 +580,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Cost Category',
                       suggestions: _dropdownCostCategory,
                       icon: Icons.celebration,
-                      controller: _costCategoryDropDownController,
+                      controller: _txtCostCategoryDropDown,
                       onChanged: (value) {
                         _selectedValueCostCategory = value;
                         PD.pd(text: _selectedValueWorkType.toString());
@@ -541,11 +591,46 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Material',
                       suggestions: _dropdownMaterial,
                       icon: Icons.token,
-                      controller: _materialDropDownController,
+                      controller: _txtMaterialDropDown,
                       onChanged: (value) {
                         _selectedValueMaterial = value;
+                        _loadMaterialInfo(_selectedValueWorkType.toString(),_selectedValueCostCategory.toString(),_selectedValueMaterial.toString());
                       //  PD.pd(text: _selectedValueWorkType.toString());
                       },
+                    ),
+                    Visibility(child: Column(
+                    children:<Widget> [
+
+                      BuildDetailRow('Material ID', ),
+                      BuildDetailRow('Price', 'i'),
+                      BuildDetailRow('Qty', 'i'),
+                    ],
+                    )),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          flex:5 ,
+                          child: BuildNumberField(
+                              _txtQty,
+                              'Qty',
+                              '1',
+                              Icons.numbers,
+                              true,
+                              5
+                          ),
+                        ),
+                        SizedBox(width: 10), // Space between fields
+                        Expanded( flex:5 ,
+                            child: BuildNumberField(
+                              _txtAmount,
+                              'Material Cost/Work Cost',
+                              '1500 LKR',
+                              Icons.attach_money,
+                              true,
+                              10,)
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -743,5 +828,69 @@ class _LocationManagementState extends State<LocationManagement> {
         );
       },
     );
+  }
+}
+class MaterialData {
+  final int idtbl_material_list;
+  final int work_list_id;
+  final int cost_category_id;
+  final String material_name;
+  final String qty;
+  final String uom;
+  final String amount;
+  final int is_edit_allow;
+  final String created_date;
+  final String created_by;
+  final String change_date;
+  final String change_by;
+  final int is_active;
+  MaterialData({
+    required this.idtbl_material_list,
+    required this.work_list_id,
+    required this.cost_category_id,
+    required this.material_name,
+    required this.qty,
+    required this.uom,
+    required this.amount,
+    required this.is_edit_allow,
+    required this.created_date,
+    required this.created_by,
+    required this.change_date,
+    required this.change_by,
+    required this.is_active,
+  });
+  factory MaterialData.fromJson(Map<String, dynamic> json) {
+    return MaterialData(
+      idtbl_material_list: json['idtbl_material_list'] as int,
+      work_list_id: json['work_list_id'] as int,
+      cost_category_id: json['cost_category_id'] as int,
+      material_name: json['material_name'] as String,
+      qty: json['qty'] as String,
+      uom: json['uom'] as String,
+      amount: json['amount'] as String,
+      is_edit_allow: json['is_edit_allow'] as int,
+      created_date: json['created_date'] as String,
+      created_by: json['created_by'] as String,
+      change_date: json['change_date'] as String,
+      change_by: json['change_by'] as String,
+      is_active: json['is_active'] as int,
+    );
+  }
+  Map<String, dynamic> toJson() {
+    return {
+      'idtbl_material_list': idtbl_material_list,
+      'work_list_id': work_list_id,
+      'cost_category_id': cost_category_id,
+      'material_name': material_name,
+      'qty': qty,
+      'uom': uom,
+      'amount': amount,
+      'is_edit_allow': is_edit_allow,
+      'created_date': created_date,
+      'created_by': created_by,
+      'change_date': change_date,
+      'change_by': change_by,
+      'is_active': is_active,
+    };
   }
 }
