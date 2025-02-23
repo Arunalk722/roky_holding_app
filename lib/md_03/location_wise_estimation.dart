@@ -30,6 +30,8 @@ class _LocationManagementState extends State<LocationManagement> {
 
 
 
+
+
   //project list dropdown
   List<dynamic> _activeProjectDropDownMap = [];
   bool _isProjectsDropDown = false;
@@ -307,13 +309,6 @@ class _LocationManagementState extends State<LocationManagement> {
   List<dynamic> _activeMaterialListMap = [];
   bool _isLoadingMaterialList=false;
   Future<void> _loadActiveMaterialList(String? _workName,String? _costCategory) async {
-   // _txtMaterialDropDown.text='';
-    _selectedValueMaterial = '';
-    _dropdownMaterial.clear();
-    _activeMaterialList.clear();
-    _activeMaterialListMap.clear();
-    _isLoadingMaterialList=false;
-
     setState(() {
       _isLoadingMaterialList = true;
     });
@@ -400,25 +395,46 @@ class _LocationManagementState extends State<LocationManagement> {
 
   String? _materialId;
   String? _price;
-  String? qty;
+  String? _qty;
+  String? _unit;
+  double amount=0;
+  void _updateAmount() {
+    if(_txtAmount.text=='0'||_txtAmount.text.length<=0)
+    {
+      try {
+        double qty = double.tryParse(_txtQty.text) ?? 0;
+        double price = double.tryParse(_price.toString()) ?? 0;
+        setState(() {
+          amount = qty * price;
+        });
+        _txtAmount.text=amount.toString();
+      } catch (e) {
 
+      }
+    }else{
+
+    }
+  }
 
   Future<void> _loadMaterialInfo(String? _workName, String? _costCategory, String? _materialName) async {
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading material list');
+
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
+        PD.pd(text: "Error: No API token found.");
         return;
       }
 
       String reqUrl = '${APIHost().APIURL}/material_controller.php/get_material_info';
+
       final response = await http.post(
         Uri.parse(reqUrl),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": token, // Add the token to headers instead of the body
         },
         body: jsonEncode({
+          "Authorization": token, // Keeping Authorization in the body as per your request
           "work_name": _workName,
           "cost_category": _costCategory,
           "material_name": _materialName,
@@ -429,38 +445,34 @@ class _LocationManagementState extends State<LocationManagement> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+
         if (responseData['status'] == 200) {
-          // Parse the JSON data into a list of MaterialData objects
-          List<MaterialData> materialList = (responseData['data'] as List)
-              .map((item) => MaterialData.fromJson(item))
-              .toList();
+          if (responseData['data'] is List && responseData['data'].isNotEmpty) {
+            final materialData = responseData['data'][0];
+            setState(() {
+              _materialId = materialData['idtbl_material_list'].toString();
+              _qty = materialData['qty'];
+              _price = materialData['amount'];
+              _unit=materialData['uom'];
+            });
 
-          setState(() {
-            _activeMaterialListMap = materialList; // Store the parsed data
-            _dropdownMaterial = materialList
-                .map<String>((item) => item.material_name)
-                .toList();
-          });
-
-          //PD.pd(text: _dropdownMaterial.toString());
+            PD.pd(text: responseData.toString());
+            PD.pd(text: "Material ID: $_materialId");
+          } else {
+            PD.pd(text: "Error: No material data found.");
+            _showErrorDialog("No material data found.");
+          }
         } else {
-          final String message = responseData['message'] ?? 'Error';
+          final String message = responseData['message'] ?? 'Unknown Error';
           PD.pd(text: message);
-          OneBtnDialog.oneButtonDialog(
-            context,
-            title: 'Error',
-            message: message,
-            btnName: 'OK',
-            icon: Icons.error,
-            iconColor: Colors.red,
-            btnColor: Colors.black,
-          );
+          _showErrorDialog(message);
         }
       } else {
         PD.pd(text: "HTTP Error: ${response.statusCode}");
       }
     } catch (e) {
-      PD.pd(text: e.toString());
+      PD.pd(text: "Exception: $e");
+      _showErrorDialog("An error occurred while fetching materials.");
     } finally {
       setState(() {
         _isLoadingMaterialList = false;
@@ -471,6 +483,19 @@ class _LocationManagementState extends State<LocationManagement> {
       }
     }
   }
+
+  void _showErrorDialog(String message) {
+    OneBtnDialog.oneButtonDialog(
+      context,
+      title: 'Error',
+      message: message,
+      btnName: 'OK',
+      icon: Icons.error,
+      iconColor: Colors.red,
+      btnColor: Colors.black,
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -598,12 +623,12 @@ class _LocationManagementState extends State<LocationManagement> {
                       //  PD.pd(text: _selectedValueWorkType.toString());
                       },
                     ),
-                    Visibility(child: Column(
+                    Visibility(
+                        child: Column(
                     children:<Widget> [
-
-                      BuildDetailRow('Material ID', ),
-                      BuildDetailRow('Price', 'i'),
-                      BuildDetailRow('Qty', 'i'),
+                      BuildDetailRow('Material ID',_materialId ),
+                      BuildDetailRow('Price', _price),
+                      BuildDetailRow('Qty', '$_qty $_unit'),
                     ],
                     )),
 
@@ -611,24 +636,25 @@ class _LocationManagementState extends State<LocationManagement> {
                       children: [
                         Expanded(
                           flex:5 ,
-                          child: BuildNumberField(
+                          child:
+                          BuildNumberField(
                               _txtQty,
-                              'Qty',
+                              'Estimate Qty',
                               '1',
                               Icons.numbers,
                               true,
                               5
-                          ),
+                              ,null),
                         ),
                         SizedBox(width: 10), // Space between fields
                         Expanded( flex:5 ,
                             child: BuildNumberField(
                               _txtAmount,
-                              'Material Cost/Work Cost',
+                              'Estimate Material Cost/Work Cost',
                               '1500 LKR',
                               Icons.attach_money,
                               true,
-                              10,)
+                              10,null)
                         ),
                       ],
                     ),
@@ -647,6 +673,7 @@ class _LocationManagementState extends State<LocationManagement> {
   Widget _buildSubmitButton() {
     return ElevatedButton(
       onPressed: () {
+        _updateAmount();
         if (_formKey.currentState!.validate()) {
           PD.pd(text: "Form is valid!");
           PD.pd(
@@ -828,69 +855,5 @@ class _LocationManagementState extends State<LocationManagement> {
         );
       },
     );
-  }
-}
-class MaterialData {
-  final int idtbl_material_list;
-  final int work_list_id;
-  final int cost_category_id;
-  final String material_name;
-  final String qty;
-  final String uom;
-  final String amount;
-  final int is_edit_allow;
-  final String created_date;
-  final String created_by;
-  final String change_date;
-  final String change_by;
-  final int is_active;
-  MaterialData({
-    required this.idtbl_material_list,
-    required this.work_list_id,
-    required this.cost_category_id,
-    required this.material_name,
-    required this.qty,
-    required this.uom,
-    required this.amount,
-    required this.is_edit_allow,
-    required this.created_date,
-    required this.created_by,
-    required this.change_date,
-    required this.change_by,
-    required this.is_active,
-  });
-  factory MaterialData.fromJson(Map<String, dynamic> json) {
-    return MaterialData(
-      idtbl_material_list: json['idtbl_material_list'] as int,
-      work_list_id: json['work_list_id'] as int,
-      cost_category_id: json['cost_category_id'] as int,
-      material_name: json['material_name'] as String,
-      qty: json['qty'] as String,
-      uom: json['uom'] as String,
-      amount: json['amount'] as String,
-      is_edit_allow: json['is_edit_allow'] as int,
-      created_date: json['created_date'] as String,
-      created_by: json['created_by'] as String,
-      change_date: json['change_date'] as String,
-      change_by: json['change_by'] as String,
-      is_active: json['is_active'] as int,
-    );
-  }
-  Map<String, dynamic> toJson() {
-    return {
-      'idtbl_material_list': idtbl_material_list,
-      'work_list_id': work_list_id,
-      'cost_category_id': cost_category_id,
-      'material_name': material_name,
-      'qty': qty,
-      'uom': uom,
-      'amount': amount,
-      'is_edit_allow': is_edit_allow,
-      'created_date': created_date,
-      'created_by': created_by,
-      'change_date': change_date,
-      'change_by': change_by,
-      'is_active': is_active,
-    };
   }
 }

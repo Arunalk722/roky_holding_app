@@ -512,7 +512,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                               '1',
                               Icons.numbers,
                               true,
-                              5
+                              5,null
                           ),
                         ),
                         SizedBox(width: 10), // Space between fields
@@ -523,9 +523,8 @@ class _MaterialCreateState extends State<MaterialCreate> {
                               '1500 LKR',
                               Icons.attach_money,
                               true,
-                              10,)
+                              10,null)
                         ),
-
                       ],
                     ),
                     CustomDropdown(

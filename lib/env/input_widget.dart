@@ -131,21 +131,33 @@ Widget BuildTextFieldReadOnly(TextEditingController controller, String label, St
 
 
 
-Widget BuildNumberField(TextEditingController controller, String label,
-    String hint, IconData icon, bool vis, int MaxLenth) {
+
+
+Widget BuildNumberField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    IconData icon,
+    bool vis,
+    int maxLength,
+    Function(String)? onChanged, // Add callback function
+    ) {
   return SizedBox(
     child: Visibility(
       visible: vis,
       child: TextFormField(
-        maxLength: MaxLenth,
+        maxLength: maxLength,
         controller: controller,
-        decoration: InputTextDecoration.inputDecoration(
-          lable_Text: label,
-          hint_Text: hint,
-          icons: icon,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(),
         ),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')), // Allow decimals
+        ],
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
@@ -155,6 +167,7 @@ Widget BuildNumberField(TextEditingController controller, String label,
           }
           return null;
         },
+        onChanged: onChanged, // Trigger callback when value changes
       ),
     ),
   );
