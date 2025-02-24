@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:roky_holding/env/text_input_object.dart';
 
-import 'package:flutter/material.dart';
 
 Widget BuildPwdTextField(
     TextEditingController controller,
@@ -85,8 +84,7 @@ class _BuildPwdTextFieldState extends State<_BuildPwdTextField> {
 
 
 
-Widget BuildTextField(TextEditingController controller, String label,
-    String hint, IconData icon, bool visible, int MaxLenth) {
+Widget BuildTextField(TextEditingController controller, String label,String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,
@@ -108,8 +106,7 @@ Widget BuildTextField(TextEditingController controller, String label,
           )));
 }
 
-Widget BuildTextFieldReadOnly(TextEditingController controller, String label,
-    String hint, IconData icon, bool visible, int MaxLenth) {
+Widget BuildTextFieldReadOnly(TextEditingController controller, String label, String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,
@@ -134,21 +131,33 @@ Widget BuildTextFieldReadOnly(TextEditingController controller, String label,
 
 
 
-Widget BuildNumberField(TextEditingController controller, String label,
-    String hint, IconData icon, bool vis, int MaxLenth) {
+
+
+Widget BuildNumberField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    IconData icon,
+    bool vis,
+    int maxLength,
+    Function(String)? onChanged, // Add callback function
+    ) {
   return SizedBox(
     child: Visibility(
       visible: vis,
       child: TextFormField(
-        maxLength: MaxLenth,
+        maxLength: maxLength,
         controller: controller,
-        decoration: InputTextDecoration.inputDecoration(
-          lable_Text: label,
-          hint_Text: hint,
-          icons: icon,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          border: OutlineInputBorder(),
         ),
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')), // Allow decimals
+        ],
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter $label';
@@ -158,6 +167,7 @@ Widget BuildNumberField(TextEditingController controller, String label,
           }
           return null;
         },
+        onChanged: onChanged, // Trigger callback when value changes
       ),
     ),
   );

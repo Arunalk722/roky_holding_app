@@ -31,6 +31,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
   List<dynamic> _activeWorkListMap = [];
   bool _isLoadingWorksList = false;
   String? _selectedValueWorkType;
+  String? _selectedUnit;
   List<String> _dropdownWorkType = [];
   Future<void> _loadActiveWorkList() async {
     setState(() {
@@ -165,6 +166,20 @@ class _MaterialCreateState extends State<MaterialCreate> {
     }
   }
 
+  List<String> _dropDownSIUnit = [
+    'NA (NA)',
+    'Meter (m)',       // Length
+    'Liter (L)',       // Volume (Corrected)
+    'Ampere (A)',      // Electric Current (Corrected)
+    'Foot (ft)',       // Length (Added separately)
+    'Kilogram (kg)',   // Mass
+    'Square Meter (m²)',  // Area
+    'Cubic Meter (m³)',   // Volume
+    'Watt (W)',         // Power
+    'Volt (V)',         // Voltage
+  ];
+
+
 
   //list of materials
   final List<dynamic> _activeMaterialList = [];
@@ -205,7 +220,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
             _activeMaterialListMap = responseData['data'] ?? [];
             _activeMaterialList.clear();
             _activeMaterialList.addAll(_activeMaterialListMap);
-          //  PD.pd(text: _activeMaterialListMap.toString());
+           PD.pd(text: _activeMaterialListMap.toString());
           });
         } else {
           final String message = responseData['message'] ?? 'Error';
@@ -241,6 +256,8 @@ class _MaterialCreateState extends State<MaterialCreate> {
 
   final _costTypeDropdownController = TextEditingController();
   final _costCategoryDropDownController = TextEditingController();
+
+  final _txtUnit = TextEditingController();
   final TextEditingController _materialName = TextEditingController();
   final TextEditingController _materialCost= TextEditingController();
   final TextEditingController _qty= TextEditingController();
@@ -289,7 +306,8 @@ class _MaterialCreateState extends State<MaterialCreate> {
           "qty": _qty.text,
           "amount": _materialCost.text,
           "created_by": UserCredentials().UserName,
-          "is_edit_allow": _allowUserToEdit==true?1:0
+          "is_edit_allow": _allowUserToEdit==true?1:0,
+          "uom" : _txtUnit.text
         }),
       );
 
@@ -464,50 +482,61 @@ class _MaterialCreateState extends State<MaterialCreate> {
                         });
                       },
                     ),
-                    CustomDropdown(
-                      label: 'Select Cost Category',
-                      suggestions: _dropdownCostCategory,
-                      icon: Icons.celebration,
-                      controller: _costCategoryDropDownController,
-                      onChanged: (value) {
-                        _selectedValueCostCategory = value;
-                        PD.pd(text: _selectedValueWorkType.toString());
+                       CustomDropdown(
+                            label: 'Select Cost Category',
+                            suggestions: _dropdownCostCategory,
+                            icon: Icons.celebration,
+                            controller: _costCategoryDropDownController,
+                            onChanged: (value) {
+                              _selectedValueCostCategory = value;
+                              PD.pd(text: _selectedValueWorkType.toString());
 
-                        _loadMaterials(_selectedValueWorkType.toString(),_selectedValueCostCategory.toString());
-                      },
-                    ),
-
-                     BuildTextField(
-                              _materialName,
-                              'Material Name/Work Name',
-                              'Cement (50 Kg bags)/Paint work',
-                              Icons.description,
-                              true,
-                              45),
+                              _loadMaterials(_selectedValueWorkType.toString(),
+                                  _selectedValueCostCategory.toString());
+                            },
+                          ),
+                    BuildTextField(
+                        _materialName,
+                        'Material Name/Work Name',
+                        'Cement (50 Kg bags)/Paint work',
+                        Icons.description,
+                        true,
+                        45),
                     Row(
                       children: [
                         Expanded(
-                          flex:5 ,
+                          flex: 4,
                           child: BuildNumberField(
                               _qty,
                               'Qty',
                               '1',
                               Icons.numbers,
                               true,
-                              5
+                              5,null
                           ),
                         ),
                         SizedBox(width: 10), // Space between fields
-                        Expanded( flex:5 ,
-                          child: BuildNumberField(
+                        Expanded(flex: 4,
+                            child: BuildNumberField(
                               _materialCost,
                               'Material Cost/Work Cost',
                               '1500 LKR',
                               Icons.attach_money,
                               true,
-                              10,)
+                              10,null)
                         ),
                       ],
+                    ),
+                    CustomDropdown(
+                      label: 'Select Unit',
+                      suggestions: _dropDownSIUnit,
+                      icon: Icons.straighten,
+                      controller: _txtUnit,
+                      onChanged: (value) {
+                        _selectedUnit = value;
+                        PD.pd(text: _selectedUnit.toString());
+
+                      },
                     ),
                     _buildCheckboxes(),
                   ],
@@ -640,7 +669,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                           style: const TextStyle(fontSize: 14),
                         ),
                         Text(
-                          'Qty: ${material['qty'] ?? 'Unknown'}',
+                          'Qty: ${material['qty'] ?? 'Unknown'} ${material['uom']}',
                           style: const TextStyle(fontSize: 14),
                         ),
                         Text(

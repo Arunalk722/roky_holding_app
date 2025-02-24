@@ -6,6 +6,7 @@ import '../env/DialogBoxs.dart';
 import '../env/api_info.dart';
 import '../env/input_widget.dart';
 import '../env/print_debug.dart';
+import 'material_info.dart';
 
 class LocationManagement extends StatefulWidget {
   const LocationManagement({super.key});
@@ -25,6 +26,11 @@ class _LocationManagementState extends State<LocationManagement> {
       _dropDownToProject();
     });
   }
+
+
+
+
+
 
   //project list dropdown
   List<dynamic> _activeProjectDropDownMap = [];
@@ -303,13 +309,6 @@ class _LocationManagementState extends State<LocationManagement> {
   List<dynamic> _activeMaterialListMap = [];
   bool _isLoadingMaterialList=false;
   Future<void> _loadActiveMaterialList(String? _workName,String? _costCategory) async {
-   // _materialDropDownController.text='';
-    _selectedValueMaterial = '';
-    _dropdownMaterial.clear();
-    _activeMaterialList.clear();
-    _activeMaterialListMap.clear();
-    _isLoadingMaterialList=false;
-
     setState(() {
       _isLoadingMaterialList = true;
     });
@@ -380,47 +379,123 @@ class _LocationManagementState extends State<LocationManagement> {
 
 
   //Text field controllers and validation
-  final _locationNameController = TextEditingController();
-  final _civilWorkCostController = TextEditingController();
-  final _filtersCostController = TextEditingController();
-  final _serviceCostController = TextEditingController();
-  final _labourCostController = TextEditingController();
-  final _materialCostController = TextEditingController();
-  final _equipmentCostController = TextEditingController();
-  final _otherCostController = TextEditingController();
-  final _projectDropdownController = TextEditingController();
-  final _projectLocationDropdownController = TextEditingController();
-  final _materialDropDownController = TextEditingController();
-  final _costTypeDropdownController = TextEditingController();
-  final _costCategoryDropDownController = TextEditingController();
-
-  double _totalCost = 0;
+  
+  final _txtProjectDropdown = TextEditingController();
+  final _txtProjectLocationDropdown = TextEditingController();
+  final _txtMaterialDropDown = TextEditingController();
+  final _txtCostTypeDropdown = TextEditingController();
+  final _txtCostCategoryDropDown = TextEditingController();
+  final _txtQty = TextEditingController();
+  final _txtAmount = TextEditingController();
 
   @override
   void dispose() {
-    _locationNameController.dispose();
-    _civilWorkCostController.dispose();
-    _filtersCostController.dispose();
-    _serviceCostController.dispose();
-    _labourCostController.dispose();
-    _materialCostController.dispose();
-    _equipmentCostController.dispose();
-    _otherCostController.dispose();
     super.dispose();
   }
 
-  void _calculateTotalCost() {
-    setState(() {
-      _totalCost = 0;
-      _totalCost += double.tryParse(_civilWorkCostController.text) ?? 0;
-      _totalCost += double.tryParse(_filtersCostController.text) ?? 0;
-      _totalCost += double.tryParse(_serviceCostController.text) ?? 0;
-      _totalCost += double.tryParse(_labourCostController.text) ?? 0;
-      _totalCost += double.tryParse(_materialCostController.text) ?? 0;
-      _totalCost += double.tryParse(_equipmentCostController.text) ?? 0;
-      _totalCost += double.tryParse(_otherCostController.text) ?? 0;
-    });
+  String? _materialId;
+  String? _price;
+  String? _qty;
+  String? _unit;
+  double amount=0;
+  void _updateAmount() {
+    if(_txtAmount.text=='0'||_txtAmount.text.length<=0)
+    {
+      try {
+        double qty = double.tryParse(_txtQty.text) ?? 0;
+        double price = double.tryParse(_price.toString()) ?? 0;
+        setState(() {
+          amount = qty * price;
+        });
+        _txtAmount.text=amount.toString();
+      } catch (e) {
+
+      }
+    }else{
+
+    }
   }
+
+  Future<void> _loadMaterialInfo(String? _workName, String? _costCategory, String? _materialName) async {
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        PD.pd(text: "Error: No API token found.");
+        return;
+      }
+
+      String reqUrl = '${APIHost().APIURL}/material_controller.php/get_material_info';
+
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": token, // Keeping Authorization in the body as per your request
+          "work_name": _workName,
+          "cost_category": _costCategory,
+          "material_name": _materialName,
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['status'] == 200) {
+          if (responseData['data'] is List && responseData['data'].isNotEmpty) {
+            final materialData = responseData['data'][0];
+            setState(() {
+              _materialId = materialData['idtbl_material_list'].toString();
+              _qty = materialData['qty'];
+              _price = materialData['amount'];
+              _unit=materialData['uom'];
+            });
+
+            PD.pd(text: responseData.toString());
+            PD.pd(text: "Material ID: $_materialId");
+          } else {
+            PD.pd(text: "Error: No material data found.");
+            _showErrorDialog("No material data found.");
+          }
+        } else {
+          final String message = responseData['message'] ?? 'Unknown Error';
+          PD.pd(text: message);
+          _showErrorDialog(message);
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: "Exception: $e");
+      _showErrorDialog("An error occurred while fetching materials.");
+    } finally {
+      setState(() {
+        _isLoadingMaterialList = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    OneBtnDialog.oneButtonDialog(
+      context,
+      title: 'Error',
+      message: message,
+      btnName: 'OK',
+      icon: Icons.error,
+      iconColor: Colors.red,
+      btnColor: Colors.black,
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +573,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Project',
                       suggestions: _dropdownProjects,
                       icon: Icons.category_sharp,
-                      controller: _projectDropdownController,
+                      controller: _txtProjectDropdown,
                       onChanged: (value) {
                         _selectedProjectName = value;
                         _dropDownToProjectLocation(value.toString());
@@ -508,7 +583,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Location',
                       suggestions: _dropdownProjectLocation,
                       icon: Icons.location_city,
-                      controller: _projectLocationDropdownController,
+                      controller: _txtProjectLocationDropdown,
                       onChanged: (value) {
                         _selectedProjectLocationName = value;
                         _loadActiveWorkList();
@@ -520,7 +595,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Work Type',
                       suggestions: _dropdownWorkType,
                       icon: Icons.category_sharp,
-                      controller: _costTypeDropdownController,
+                      controller: _txtCostTypeDropdown,
                       onChanged: (value) {
                         _selectedValueWorkType = value;
                         _loadActiveCostList(value);
@@ -530,7 +605,7 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Cost Category',
                       suggestions: _dropdownCostCategory,
                       icon: Icons.celebration,
-                      controller: _costCategoryDropDownController,
+                      controller: _txtCostCategoryDropDown,
                       onChanged: (value) {
                         _selectedValueCostCategory = value;
                         PD.pd(text: _selectedValueWorkType.toString());
@@ -541,11 +616,47 @@ class _LocationManagementState extends State<LocationManagement> {
                       label: 'Select Material',
                       suggestions: _dropdownMaterial,
                       icon: Icons.token,
-                      controller: _materialDropDownController,
+                      controller: _txtMaterialDropDown,
                       onChanged: (value) {
                         _selectedValueMaterial = value;
+                        _loadMaterialInfo(_selectedValueWorkType.toString(),_selectedValueCostCategory.toString(),_selectedValueMaterial.toString());
                       //  PD.pd(text: _selectedValueWorkType.toString());
                       },
+                    ),
+                    Visibility(
+                        child: Column(
+                    children:<Widget> [
+                      BuildDetailRow('Material ID',_materialId ),
+                      BuildDetailRow('Price', _price),
+                      BuildDetailRow('Qty', '$_qty $_unit'),
+                    ],
+                    )),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          flex:5 ,
+                          child:
+                          BuildNumberField(
+                              _txtQty,
+                              'Estimate Qty',
+                              '1',
+                              Icons.numbers,
+                              true,
+                              5
+                              ,null),
+                        ),
+                        SizedBox(width: 10), // Space between fields
+                        Expanded( flex:5 ,
+                            child: BuildNumberField(
+                              _txtAmount,
+                              'Estimate Material Cost/Work Cost',
+                              '1500 LKR',
+                              Icons.attach_money,
+                              true,
+                              10,null)
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -562,6 +673,7 @@ class _LocationManagementState extends State<LocationManagement> {
   Widget _buildSubmitButton() {
     return ElevatedButton(
       onPressed: () {
+        _updateAmount();
         if (_formKey.currentState!.validate()) {
           PD.pd(text: "Form is valid!");
           PD.pd(
