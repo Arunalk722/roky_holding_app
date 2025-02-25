@@ -26,8 +26,8 @@ class _LoginAppState extends State<LoginApp> {
   @override
   void initState() {
     super.setState(() {
-      _userName.text = 'aruna';
-      _password.text = '123';
+      _userName.text = 'admin';
+      _password.text = '123Admin@';
      // PD.pd(text: logo);
     });
   }
@@ -179,9 +179,9 @@ class _LoginAppState extends State<LoginApp> {
                   ),
                   const SizedBox(height: 20),
 
-                  BuildTextField(_userName, 'User Name',
+                  buildTextField(_userName, 'User Name',
                       'Enter your user name', Icons.person, true, 20),
-                  BuildPwdTextField(_password, 'Password',
+                  buildPwdTextField(_password, 'Password',
                       'Your password', Icons.password_rounded, true, 20),
 
                   ElevatedButton(

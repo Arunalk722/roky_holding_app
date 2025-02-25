@@ -383,12 +383,12 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
                       color: Colors.blueAccent,
                     ),
                   ),
-                  BuildTextField(_email, 'Display Name',
+                  buildTextField(_email, 'Display Name',
                       'Enter your display name', Icons.person, true, 45),
                   //const SizedBox(height: 15),
-                  BuildTextField(_phoneNumber, 'Phone Number',
+                  buildTextField(_phoneNumber, 'Phone Number',
                       'Enter your phone number', Icons.phone, true, 10),
-                  BuildTextField(_email, 'Email',
+                  buildTextField(_email, 'Email',
                       'Enter your email', Icons.key, true, 45),
 
                   const SizedBox(height: 15),
@@ -448,10 +448,10 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
                     ),
                   ),
                   const SizedBox(height: 16,),
-                  BuildPwdTextField(_currentPassword, 'Current Password', 'Enter your current', Icons.password_rounded, true, 20),
-                  BuildPwdTextField(_password, 'Password', 'Enter your password', Icons.password_rounded, true, 20),
+                  buildPwdTextField(_currentPassword, 'Current Password', 'Enter your current', Icons.password_rounded, true, 20),
+                  buildPwdTextField(_password, 'Password', 'Enter your password', Icons.password_rounded, true, 20),
 
-                  BuildPwdTextField(_confirmPassword, 'Confirm Password', 'Confirm your password', Icons.password_rounded, true, 20),
+                  buildPwdTextField(_confirmPassword, 'Confirm Password', 'Confirm your password', Icons.password_rounded, true, 20),
 
                   ElevatedButton(
                     onPressed: () {

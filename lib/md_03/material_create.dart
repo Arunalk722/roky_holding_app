@@ -495,7 +495,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                                   _selectedValueCostCategory.toString());
                             },
                           ),
-                    BuildTextField(
+                    buildTextField(
                         _materialName,
                         'Material Name/Work Name',
                         'Cement (50 Kg bags)/Paint work',
@@ -506,7 +506,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                       children: [
                         Expanded(
                           flex: 4,
-                          child: BuildNumberField(
+                          child: buildNumberField(
                               _qty,
                               'Qty',
                               '1',
@@ -517,7 +517,7 @@ class _MaterialCreateState extends State<MaterialCreate> {
                         ),
                         SizedBox(width: 10), // Space between fields
                         Expanded(flex: 4,
-                            child: BuildNumberField(
+                            child: buildNumberField(
                               _materialCost,
                               'Material Cost/Work Cost',
                               '1500 LKR',

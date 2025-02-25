@@ -23,7 +23,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
   final TextEditingController _txtTender = TextEditingController();
 
 
-  Future<void> updateLocation(BuildContext context, int idtbl_project_location, int project_id,String location_name, String is_active, String change_by) async {
+  Future<void> updateLocation(BuildContext context, int idtbl_project_location, int project_id,String location_name, String is_active) async {
     try {
       WaitDialog.showWaitDialog(context, message: 'Updating location...');
 
@@ -55,7 +55,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
           "project_id": project_id,
           "location_name": location_name,
           "is_active": 1,
-          "change_by": change_by,
+          "change_by": UserCredentials().UserName,
         }),
       );
 
@@ -427,9 +427,9 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                       },
                     ),
 
-                    BuildTextField(_txtLocationName, 'Location Name',
+                    buildTextField(_txtLocationName, 'Location Name',
                         'Colombo water', Icons.create, true, 45),
-                    BuildTextField(
+                    buildTextField(
                         _txtTender, 'Tender', 'TX00001', Icons.query_builder, true, 20),
                   ],
                 ),
@@ -639,7 +639,11 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     }
 
     if (_activeProjectsLocationList.isEmpty) {
-      return const Center(child: Text('No active costing found.'));
+      return const Center(
+          child: Text(
+            'No active costing found.',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ));
     }
 
     return ListView.builder(
@@ -647,88 +651,120 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _activeProjectsLocationList.length,
       itemBuilder: (context, index) {
-        final project = _activeProjectsLocationList[index];
+        final location = _activeProjectsLocationList[index];
+
         TextEditingController _txtLocationNameController = TextEditingController(
-            text: project['location_name']);
+            text: location['location_name']);
         TextEditingController _txtProjectName = TextEditingController(
-            text: project['project_name']);
+            text: location['project_name']);
         TextEditingController _txtTender = TextEditingController(
-            text: project['tender_cost']);
+            text: location['tender_cost']);
         TextEditingController _txtEstimation = TextEditingController(
-            text: project['exp_estimation_cost']);
+            text: location['exp_estimation_cost']);
 
         return Card(
-          // Styling for the card
-          child: InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+          elevation: 6,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade100, Colors.blue.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: InkWell(
+              onTap: () {},
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.business, color: Theme
-                      .of(context)
-                      .primaryColor),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        BuildTextFieldReadOnly(_txtProjectName, 'Project Name', '', Icons.construction, true, 45),
-                        BuildTextField(_txtLocationNameController, 'Location Name', '', Icons.pin_drop, true, 45),
-
-
-                        // Row for Estimated Cost and Tender Cost
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Spread out the fields
+                  Row(
+                    children: [
+                      Icon(Icons.business, color: Theme.of(context).primaryColor, size: 36),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: BuildTextFieldReadOnly(
-                                _txtEstimation,
-                                'Estimated Cost',
-                                '',
-                                Icons.attach_money,
-                                true,
-                                20,
-                              ),
-                            ),
-                            const SizedBox(width: 16), // Add some spacing between the two fields
-                            Expanded(
-                              child: BuildTextFieldReadOnly(
-                                _txtTender,
-                                'Tender Cost',
-                                '',
-                                Icons.attach_money,
-                                true,
-                                20,
-                              ),
-                            ),
+                            buildTextFieldReadOnly(
+                                _txtProjectName, 'Project Name', '', Icons.construction, true, 45),
+                            buildTextField(
+                                _txtLocationNameController, 'Location Name', '', Icons.pin_drop, true, 45),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
 
+                  const SizedBox(height: 8),
+                  const Divider(thickness: 1, color: Colors.grey),
 
-
-                        BuildDetailRow(
-                            'Created:',
-                            '${project['created_by']} on ${project['created_date']}'
+                  // Row for Estimated Cost and Tender Cost
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: buildTextFieldReadOnly(
+                          _txtEstimation,
+                          'Estimated Cost',
+                          '',
+                          Icons.attach_money,
+                          true,
+                          20,
                         ),
-                        BuildDetailRow(
-                            'Changed:',
-                            '${project['change_by']} on ${project['change_date']}'
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: buildTextFieldReadOnly(
+                          _txtTender,
+                          'Tender Cost',
+                          '',
+                          Icons.attach_money,
+                          true,
+                          20,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+                  const Divider(thickness: 1, color: Colors.grey),
+
+                  buildDetailRow(
+                    'Created:',
+                    '${location['created_by']} on ${location['created_date']}',
+
+                  ),
+                  buildDetailRow(
+                    'Changed:',
+                    '${location['change_by']} on ${location['change_date']}',
+
                   ),
 
                   // Save Button
-                  IconButton(
-                    icon: const Icon(Icons.save),
-                    onPressed: () {
-                      // Here you can call the API to save the updates
-                      updateLocation(context, project['idtbl_project_location'],
-                          project['project_id'],
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.save, color: Colors.white),
+                      label: const Text('Save', style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        updateLocation(
+                          context,
+                          location['idtbl_project_location'],
+                          location['project_id'],
                           _txtLocationNameController.text,
-                          _txtProjectName.text, _txtTender.text);
-                    },
+                          _txtProjectName.text
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -738,6 +774,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       },
     );
   }
+
 }
 
 //
