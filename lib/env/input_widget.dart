@@ -3,23 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:roky_holding/env/text_input_object.dart';
 
 
-Widget BuildPwdTextField(
+Widget buildPwdTextField(
     TextEditingController controller,
     String label,
     String hint,
     IconData icon,
     bool visible,
     int maxLength,
-    ) {
-  return _BuildPwdTextField(
-    controller: controller,
-    label: label,
-    hint: hint,
-    icon: icon,
-    visible: visible,
-    maxLength: maxLength,
-  );
-}
+    ) {  return _BuildPwdTextField(    controller: controller,    label: label,    hint: hint,    icon: icon,    visible: visible,    maxLength: maxLength,  );}
 
 class _BuildPwdTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -59,14 +50,17 @@ class _BuildPwdTextFieldState extends State<_BuildPwdTextField> {
             labelText: widget.label,
             hintText: widget.hint,
             prefixIcon: Icon(widget.icon),
+
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureText ? Icons.visibility_off : Icons.visibility,
               ),
+
               onPressed: () {
                 setState(() {
                   _obscureText = !_obscureText;
                 });
+
               },
             ),
           ),
@@ -84,14 +78,13 @@ class _BuildPwdTextFieldState extends State<_BuildPwdTextField> {
 
 
 
-Widget BuildTextField(TextEditingController controller, String label,String hint, IconData icon, bool visible, int MaxLenth) {
+Widget buildTextField(TextEditingController controller, String label,String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,
           child: TextFormField(
             maxLength: MaxLenth,
             controller: controller,
-
             decoration: InputTextDecoration.inputDecoration(
               lable_Text: label,
               hint_Text: hint,
@@ -103,10 +96,12 @@ Widget BuildTextField(TextEditingController controller, String label,String hint
               }
               return null;
             },
-          )));
+          )
+      )
+  );
 }
 
-Widget BuildTextFieldReadOnly(TextEditingController controller, String label, String hint, IconData icon, bool visible, int MaxLenth) {
+Widget buildTextFieldReadOnly(TextEditingController controller, String label, String hint, IconData icon, bool visible, int MaxLenth) {
   return SizedBox(
       child: Visibility(
           visible: visible,
@@ -128,19 +123,7 @@ Widget BuildTextFieldReadOnly(TextEditingController controller, String label, St
           )));
 }
 
-
-
-
-
-
-Widget BuildNumberField(
-    TextEditingController controller,
-    String label,
-    String hint,
-    IconData icon,
-    bool vis,
-    int maxLength,
-    Function(String)? onChanged, // Add callback function
+Widget buildNumberField(    TextEditingController controller,    String label,    String hint,    IconData icon,    bool vis,    int maxLength,    Function(String)? onChanged, // Add callback function
     ) {
   return SizedBox(
     child: Visibility(
@@ -173,7 +156,7 @@ Widget BuildNumberField(
   );
 }
 
-Widget BuildReadOnlyTotalCostField(TextEditingController controller,
+Widget buildReadOnlyTotalCostField(TextEditingController controller,
     String label, String hint, IconData icon, int MaxLenth) {
   return Card(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -361,7 +344,7 @@ class _CustomDropdownState extends State<CustomDropdown> {
 ),
 */
 
-Widget BuildDetailRow(String label, dynamic value) {
+Widget buildDetailRow(String label, dynamic value) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:roky_holding/env/app_bar.dart';
 import 'package:http/http.dart' as http;
@@ -6,7 +7,7 @@ import '../env/DialogBoxs.dart';
 import '../env/api_info.dart';
 import '../env/input_widget.dart';
 import '../env/print_debug.dart';
-import 'material_info.dart';
+import '../env/user_data.dart';
 
 class LocationManagement extends StatefulWidget {
   const LocationManagement({super.key});
@@ -27,7 +28,80 @@ class _LocationManagementState extends State<LocationManagement> {
     });
   }
 
+  //loading estimation
+  List<dynamic> _activeEstimationList = [];
+  bool _isEstimationLoad = false;
+  Future<void> _loadProjectsLocationEstimationList() async {
+    _activeEstimationList.clear();
+    setState(() {
+      _isEstimationLoad = true;
+    });
 
+    try {
+      WaitDialog.showWaitDialog(context, message: 'Loading estimations');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+      String reqUrl =
+          '${APIHost().APIURL}/estimation_management.php/get_lw_estimation_list';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"Authorization": token,
+          "project_name": _selectedProjectName.toString(),
+          "location_name":_selectedProjectLocationName.toString()
+        }),
+      );
+
+      PD.pd(text: reqUrl);
+
+      if (response.statusCode == 200) {
+        try {
+          final responseData =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+          // Check the status and process the response data
+          if (responseData['status'] == 200) {
+            // Extract data from the response
+            setState(() {
+              _activeEstimationList = List.from(responseData['data'] ?? []);
+            });
+
+            // Print out the data for debugging
+          } else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(text: e.toString());
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+      setState(() {
+        _isEstimationLoad = false;
+      });
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
 
 
 
@@ -238,7 +312,7 @@ class _LocationManagementState extends State<LocationManagement> {
   final List<dynamic> _activeCostList = [];
   List<dynamic> _activeCostListMap = [];
   bool _isLoadingCostList=false;
-  Future<void> _loadActiveCostList(String? _workName) async {
+  Future<void> _loadActiveCostList(String? workName) async {
     setState(() {
       _isLoadingCostList = true;
     });
@@ -258,7 +332,7 @@ class _LocationManagementState extends State<LocationManagement> {
           "Content-Type": "application/json",
         },
         body: jsonEncode({"Authorization": token,
-          "work_name":_workName,
+          "work_name":workName,
         }),
       );
 
@@ -308,7 +382,7 @@ class _LocationManagementState extends State<LocationManagement> {
   final List<dynamic> _activeMaterialList = [];
   List<dynamic> _activeMaterialListMap = [];
   bool _isLoadingMaterialList=false;
-  Future<void> _loadActiveMaterialList(String? _workName,String? _costCategory) async {
+  Future<void> _loadActiveMaterialList(String? workName,String? costCategory) async {
     setState(() {
       _isLoadingMaterialList = true;
     });
@@ -329,8 +403,8 @@ class _LocationManagementState extends State<LocationManagement> {
 
         body: jsonEncode({
           "Authorization": token,
-          "work_name":_workName,
-          "cost_category":_costCategory
+          "work_name":workName,
+          "cost_category":costCategory
         }),
       );
 
@@ -386,20 +460,23 @@ class _LocationManagementState extends State<LocationManagement> {
   final _txtCostTypeDropdown = TextEditingController();
   final _txtCostCategoryDropDown = TextEditingController();
   final _txtQty = TextEditingController();
-  final _txtAmount = TextEditingController();
+  final _txtEstimationAmount = TextEditingController();
+  final _txtDescriptions = TextEditingController();
 
   @override
   void dispose() {
     super.dispose();
   }
 
+
   String? _materialId;
   String? _price;
   String? _qty;
   String? _unit;
   double amount=0;
+
   void _updateAmount() {
-    if(_txtAmount.text=='0'||_txtAmount.text.length<=0)
+    if(_txtEstimationAmount.text=='0'||_txtEstimationAmount.text.length<=0)
     {
       try {
         double qty = double.tryParse(_txtQty.text) ?? 0;
@@ -407,7 +484,7 @@ class _LocationManagementState extends State<LocationManagement> {
         setState(() {
           amount = qty * price;
         });
-        _txtAmount.text=amount.toString();
+        _txtEstimationAmount.text=amount.toString();
       } catch (e) {
 
       }
@@ -416,7 +493,7 @@ class _LocationManagementState extends State<LocationManagement> {
     }
   }
 
-  Future<void> _loadMaterialInfo(String? _workName, String? _costCategory, String? _materialName) async {
+  Future<void> _loadMaterialInfo(String? workName, String? costCategory, String? materialName) async {
     try {
       WaitDialog.showWaitDialog(context, message: 'Loading material list');
 
@@ -435,17 +512,15 @@ class _LocationManagementState extends State<LocationManagement> {
         },
         body: jsonEncode({
           "Authorization": token, // Keeping Authorization in the body as per your request
-          "work_name": _workName,
-          "cost_category": _costCategory,
-          "material_name": _materialName,
+          "work_name": workName,
+          "cost_category": costCategory,
+          "material_name": materialName,
         }),
       );
 
       PD.pd(text: reqUrl);
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-
         if (responseData['status'] == 200) {
           if (responseData['data'] is List && responseData['data'].isNotEmpty) {
             final materialData = responseData['data'][0];
@@ -454,8 +529,8 @@ class _LocationManagementState extends State<LocationManagement> {
               _qty = materialData['qty'];
               _price = materialData['amount'];
               _unit=materialData['uom'];
+              _txtDescriptions.text = materialData['material_name'];
             });
-
             PD.pd(text: responseData.toString());
             PD.pd(text: "Material ID: $_materialId");
           } else {
@@ -497,6 +572,282 @@ class _LocationManagementState extends State<LocationManagement> {
   }
 
 
+  Future<void> createEstimationList() async {
+    // Add BuildContext
+    try {
+      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        PD.pd(text: "Authentication token is missing.");
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'Authentication Error',
+          message: "Authentication token is missing.",
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+        return;
+      }
+
+      PD.pd(text: "Token: $token");
+      String a = '${APIHost().APIURL}/estimation_management.php/Create_Estimation_List';
+      final response = await http.post(
+        Uri.parse(a),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": APIToken().token,
+          "location_name": _selectedProjectLocationName.toString(),
+          "project_name": _selectedProjectName.toString(),
+          "idtbl_material_list": _materialId,
+          "is_active": '1',
+          "created_by": UserCredentials().UserName,
+          "estimate_amount": _txtEstimationAmount.text,
+          "estimation_gap":"0",
+          "estimate_qty":_txtQty.text,
+          "material_description":_txtDescriptions.text
+        }),
+      );
+
+      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+      if (response.statusCode == 200) {
+        WaitDialog.hideDialog(context);
+        try {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final int status = responseData['status'];
+
+          if (status == 200) {
+            PD.pd(text: responseData.toString());
+            OneBtnDialog.oneButtonDialog(context,
+                title: "Successful",
+                message: responseData['message'],
+                btnName: 'Ok',
+                icon: Icons.verified_outlined,
+                iconColor: Colors.black,
+                btnColor: Colors.green);
+          //  _loadProjectsLocationList(_selectedProjectName.toString());
+
+            clearData();
+          } else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(
+              text: "Error decoding JSON: $e, Body: ${response.body}"); // Debug
+          ExceptionDialog.exceptionDialog(
+            context,
+            title: 'JSON Error',
+            message: "Error decoding JSON response: $e",
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        WaitDialog.hideDialog(context);
+        String errorMessage =
+            'estimation creating failed with status code ${response
+            .statusCode}';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (e) {
+            errorMessage = response.body;
+          }
+        }
+        PD.pd(text: errorMessage);
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'HTTP Error',
+          message: errorMessage,
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'An error occurred: $e';
+      if (e is FormatException) {
+        errorMessage = 'Invalid JSON response';
+      } else if (e is SocketException) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      WaitDialog.hideDialog(context);
+      PD.pd(text: errorMessage);
+      ExceptionDialog.exceptionDialog(
+        context,
+        title: 'General Error',
+        message: errorMessage,
+        btnName: 'OK',
+        icon: Icons.error,
+        iconColor: Colors.red,
+        btnColor: Colors.black,
+      );
+    }
+  }
+
+  Future<void> createNewEstimationId() async {
+    // Add BuildContext
+    try {
+      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        PD.pd(text: "Authentication token is missing.");
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'Authentication Error',
+          message: "Authentication token is missing.",
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+        return;
+      }
+
+      PD.pd(text: "Token: $token");
+      String a = '${APIHost().APIURL}/estimation_management.php/create_estimation';
+      final response = await http.post(
+        Uri.parse(a),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": APIToken().token,
+          "location_name": _selectedProjectLocationName.toString(),
+          "project_name": _selectedProjectName.toString(),
+          "is_active": '1',
+          "created_by": UserCredentials().UserName,
+        }),
+      );
+      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+      if (response.statusCode == 200) {
+        WaitDialog.hideDialog(context);
+        try {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final int status = responseData['status'];
+          if (status == 200) {
+            PD.pd(text: responseData.toString());
+            OneBtnDialog.oneButtonDialog(context,
+                title: "Successful",
+                message: responseData['message'],
+                btnName: 'Ok',
+                icon: Icons.verified_outlined,
+                iconColor: Colors.black,
+                btnColor: Colors.green);
+            //  _loadProjectsLocationList(_selectedProjectName.toString());
+
+          }
+          else if (status == 409) {
+            PD.pd(text: responseData.toString());
+            OneBtnDialog.oneButtonDialog(context,
+                title: "Scanning",
+                message: responseData['message'],
+                btnName: 'Ok',
+                icon: Icons.find_in_page,
+                iconColor: Colors.black,
+                btnColor: Colors.green);
+            //  _loadProjectsLocationList(_selectedProjectName.toString());
+            _loadProjectsLocationEstimationList();
+          }
+          else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(
+              text: "Error decoding JSON: $e, Body: ${response.body}"); // Debug
+          ExceptionDialog.exceptionDialog(
+            context,
+            title: 'JSON Error',
+            message: "Error decoding JSON response: $e",
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        WaitDialog.hideDialog(context);
+        String errorMessage =
+            'estimation creating failed with status code ${response
+            .statusCode}';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (e) {
+            errorMessage = response.body;
+          }
+        }
+        PD.pd(text: errorMessage);
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'HTTP Error',
+          message: errorMessage,
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'An error occurred: $e';
+      if (e is FormatException) {
+        errorMessage = 'Invalid JSON response';
+      } else if (e is SocketException) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      WaitDialog.hideDialog(context);
+      PD.pd(text: errorMessage);
+      ExceptionDialog.exceptionDialog(
+        context,
+        title: 'General Error',
+        message: errorMessage,
+        btnName: 'OK',
+        icon: Icons.error,
+        iconColor: Colors.red,
+        btnColor: Colors.black,
+      );
+    }
+  }
+
+  void clearData(){
+     _materialId='';
+     _price='';
+     _qty='';
+     _unit='';
+     amount=0;
+    _txtEstimationAmount.text='';
+    _txtQty.text='';
+    _txtDescriptions.text='';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -512,17 +863,17 @@ class _LocationManagementState extends State<LocationManagement> {
                     // Two columns if screen is wide
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: _buildCreateLocationForm()),
+                      Expanded(child: _buildCreateEstimationForm()),
                       const SizedBox(width: 20), // Spacing between columns
-                      Expanded(child: _buildActiveLocationCostListCard()),
+                      Expanded(child: _buildActiveEstimationListCard()),
                     ],
                   )
                 : Column(
                     // Stack in a single column if screen is narrow
                     children: [
-                      _buildCreateLocationForm(),
+                      _buildCreateEstimationForm(),
                       const SizedBox(height: 20), // Spacing between sections
-                      _buildActiveLocationCostListCard(),
+                      _buildActiveEstimationListCard(),
                     ],
                   ),
           );
@@ -531,7 +882,7 @@ class _LocationManagementState extends State<LocationManagement> {
     );
   }
 
-  Widget _buildCreateLocationForm() {
+  Widget _buildCreateEstimationForm() {
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
@@ -586,11 +937,10 @@ class _LocationManagementState extends State<LocationManagement> {
                       controller: _txtProjectLocationDropdown,
                       onChanged: (value) {
                         _selectedProjectLocationName = value;
+                        createNewEstimationId();
                         _loadActiveWorkList();
                       },
                     ),
-
-
                     CustomDropdown(
                       label: 'Work Type',
                       suggestions: _dropdownWorkType,
@@ -623,21 +973,22 @@ class _LocationManagementState extends State<LocationManagement> {
                       //  PD.pd(text: _selectedValueWorkType.toString());
                       },
                     ),
+                    buildTextField(_txtDescriptions, 'Descriptions', 'Cement', Icons.description, true, 45),
                     Visibility(
+                        visible: false,
                         child: Column(
-                    children:<Widget> [
-                      BuildDetailRow('Material ID',_materialId ),
-                      BuildDetailRow('Price', _price),
-                      BuildDetailRow('Qty', '$_qty $_unit'),
-                    ],
+                        children:<Widget> [
+                       buildDetailRow('Material ID',_materialId ),
+                       buildDetailRow('Price', _price),
+                       buildDetailRow('Qty', '$_qty $_unit'),
+                      ],
                     )),
-
                     Row(
                       children: [
                         Expanded(
                           flex:5 ,
                           child:
-                          BuildNumberField(
+                          buildNumberField(
                               _txtQty,
                               'Estimate Qty',
                               '1',
@@ -648,8 +999,8 @@ class _LocationManagementState extends State<LocationManagement> {
                         ),
                         SizedBox(width: 10), // Space between fields
                         Expanded( flex:5 ,
-                            child: BuildNumberField(
-                              _txtAmount,
+                            child: buildNumberField(
+                                _txtEstimationAmount,
                               'Estimate Material Cost/Work Cost',
                               '1500 LKR',
                               Icons.attach_money,
@@ -682,15 +1033,15 @@ class _LocationManagementState extends State<LocationManagement> {
 
           YNDialogCon.ynDialogMessage(
             context,
-            messageBody: 'Confirm to create a new project',
-            messageTitle: 'Project Creating',
+            messageBody: 'Confirm to adding items estimation',
+            messageTitle: 'estimations making',
             icon: Icons.verified_outlined,
             iconColor: Colors.black,
             btnDone: 'YES',
             btnClose: 'NO',
           ).then((value) async {
             if (value == 1) {
-              // await createProjectManagement(context);
+              await createEstimationList();
             }
           });
         }
@@ -709,11 +1060,11 @@ class _LocationManagementState extends State<LocationManagement> {
         elevation: 5, // Elevation
         shadowColor: Colors.black26, // Shadow color
       ),
-      child: const Text('Create Costing'),
+      child: const Text('Create estimation'),
     );
   }
 
-  Widget _buildActiveLocationCostListCard() {
+  Widget _buildActiveEstimationListCard() {
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
@@ -722,7 +1073,7 @@ class _LocationManagementState extends State<LocationManagement> {
         child: Column(
           children: [
             const Text(
-              "Active Costing",
+              "Active Project Estimation",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -734,120 +1085,84 @@ class _LocationManagementState extends State<LocationManagement> {
   }
 
   Widget _buildActiveProjectsList() {
-    if (_isLoadingWorksList) {
+    if (_isEstimationLoad) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_activeWorksList.isEmpty) {
-      return const Center(child: Text('No active costing found.'));
+    if (_activeEstimationList.isEmpty) {
+      return const Center(
+          child: Text(
+            'No active estimation found.',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ));
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeWorksList.length,
+      itemCount: _activeEstimationList.length,
       itemBuilder: (context, index) {
-        final project = _activeWorksList[index];
+        final estimation = _activeEstimationList[index];
+
+        TextEditingController _txtMaterialDescription = TextEditingController(
+            text: estimation['material_description'].toString());
+
         return Card(
-          // ... (card styling)
-          child: InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+          elevation: 6,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade100, Colors.blue.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: InkWell(
+              onTap: () {},
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.business, color: Theme.of(context).primaryColor),
+                 // Icon(Icons.lo, color: Theme.of(context).primaryColor, size: 36),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          project['project_name'] ?? 'Project Name',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        Center(child: buildDetailRow('Estimation ID', estimation['estimation_id'].toString())),
+                        Visibility(visible: false,child: buildDetailRow('List ID', estimation['idtbl_project_location_estimations_list'].toString()),),
+                        buildDetailRow('Material', estimation['idtbl_material_list'].toString()),
+                        buildDetailRow('Qty', estimation['estimate_qty'].toString()),
+                        buildDetailRow('Amount', '${estimation['estimate_amount']}.LKR'),
+                        buildDetailRow('Actual Cost', '${estimation['actual_cost']}.LKR'),
+                        buildDetailRow('Unit Cost', '${estimation['actual_unit_amount']}.LKR'),
+
+                        buildTextFieldReadOnly(
+                            _txtMaterialDescription, 'Material', '', Icons.construction, true, 45),
+
+                        const Divider(thickness: 1, color: Colors.grey),
+
+                        buildDetailRow(
+                          'Created:',
+                          '${estimation['created_by']} on ${estimation['created_date']}',
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tender: ${project['tender'] ?? 'Tender Number'}',
-                          style: const TextStyle(fontSize: 14),
+                        buildDetailRow(
+                          'Changed:',
+                          '${estimation['change_by']} on ${estimation['change_date']}',
                         ),
-                        // Add more details here if needed
                       ],
                     ),
                   ),
-                  // View Button
+
+                  // Save Button with Color
                   IconButton(
-                    icon: const Icon(Icons.edit),
+                    icon: const Icon(Icons.save, color: Colors.green, size: 28),
                     onPressed: () {
-                      // _isActive = project['is_active'] =='0'?false: true; // Handle null case
-                      //  _userVisible = project['user_visible'] =='0'?false: true; // Handle null case
-                      //  _txtTenderController.text = project['tender'] ?? ''; // Update text field
-                      //  _txtProjectNameController.text = project['project_name'] ?? '';
-                      //  _txtCivilWorkCostController.text = project['exp_cost_civil_work']?.toString() ?? '';
-                      // _txtMaterialCostController.text = project['exp_cost_material']?.toString() ?? '';
-                      /// _txtAllocatedCostController.text = project['exp_allocated_cost']?.toString() ?? '';
-                      // _txtTenderCostController.text = project['tender_cost']?.toString() ?? '';
-                      setState(() {});
-                      PD.pd(text: "View project: ${project['tender']}");
+                      // Call API to save updates
                     },
                   ),
-                  IconButton(
-                    icon: Icon(project['user_visible'] as int == 1
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility),
-                    color: project['user_visible'] as int == 1
-                        ? Colors.blue
-                        : Colors.red,
-                    onPressed: () async {
-                      int vis = project['user_visible'] as int;
-                      String mg =
-                          vis == 0 ? 'visibility enable' : 'visibility disable';
-                      int result = await YNDialogCon.ynDialogMessage(
-                        context,
-                        messageTitle: mg,
-                        messageBody:
-                            "Are you sure you want to $mg project ${project['tender']}?",
-                        icon: vis == 0
-                            ? Icons.visibility
-                            : Icons.visibility_off_outlined,
-                        iconColor: Colors.orange,
-                        btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
-                        btnClose: "Cancel",
-                      );
-                      if (result == 1) {
-                        //  _changeVisibility(context, '${project['idtbl_projects']}', project['user_visible'] =='0'?false: true);
-                      }
-                    },
-                  ),
-                  // Delete Button
-                  IconButton(
-                    icon: const Icon(Icons.delete,
-                        color: Colors.red), // Red color for delete action
-                    onPressed: () async {
-                      int result = await YNDialogCon.ynDialogMessage(
-                        context,
-                        messageTitle: "Confirm Deletion",
-                        messageBody:
-                            "Are you sure you want to delete project ${project['tender']}?",
-                        icon: Icons.warning,
-                        iconColor: Colors.orange,
-                        btnDone: "Yes, Delete",
-                        btnClose: "Cancel",
-                      );
-
-                      if (result == 1) {
-                        PD.pd(
-                            text:
-                                "Deleting project: ${project['idtbl_projects']}");
-                        //_deleteProject(context,'${project['idtbl_projects']}'); // Call delete function after confirmation
-                      }
-                    },
-                  ),
-
-                  // const Icon(Icons.arrow_forward_ios, size: 16), // Optional arrow
                 ],
               ),
             ),
