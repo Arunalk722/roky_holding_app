@@ -153,7 +153,7 @@ class _LoginAppState extends State<LoginApp> {
                 children: [
                   // Added Image at the top
                 Image.network(
-                'https://rokyholdings.com/wp-content/themes/rokyholdings/images/web-logo.png',
+                'http://220.247.246.76:8002/RN/src/img/logo.png',
                 height: 80,
                 errorBuilder: (context, object, stackTrace) {
                   print('Image load failed: $object, Stack trace: $stackTrace');  // Print the error to the console

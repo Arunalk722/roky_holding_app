@@ -668,7 +668,7 @@ class _ProjectManagementScreenState extends State<ProjectManagementScreen> {
           "created_by": UserCredentials().UserName,
           "change_by": UserCredentials().UserName,
           "is_active": _isActive,
-          "user_visible": _userVisible,
+          "user_visible": _userVisible==true?'1':'0',
         }),
       );
 
@@ -1038,7 +1038,7 @@ class _ProjectManagementScreenState extends State<ProjectManagementScreen> {
           "tender_cost": _txtTenderCost.text,
           "change_by": UserCredentials().UserName,
           "is_active": _isActive,
-          "user_visible": _userVisible,
+          "user_visible": _userVisible==true?1:0,
           "idtbl_projects": _txtProjectId.text,
         }),
       );

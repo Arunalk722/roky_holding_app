@@ -232,8 +232,6 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
   bool _isProjectsLocationLoad = false;
   Future<void> _loadProjectsLocationList(String project) async {
     setState(() {
-      _txtTender.text="";
-      _txtLocationName.text ="";
       _isProjectsLocationLoad = true;
     });
 
@@ -253,9 +251,6 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         body: jsonEncode({"Authorization": token,
           "project_name": project}),
       );
-
-      PD.pd(text: reqUrl);
-
       if (response.statusCode == 200) {
         try {
           final responseData =
@@ -266,8 +261,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
             // Extract data from the response
             setState(() {
               _activeProjectsLocationList = List.from(responseData['data'] ?? []);
-            });
 
+            });
             // Print out the data for debugging
           } else {
             final String message = responseData['message'] ?? 'Error';
@@ -301,6 +296,71 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
     }
   }
 
+  Future<void> _loadTenderNumber(String project) async {
+
+    try {
+      WaitDialog.showWaitDialog(context, message: 'finding tender');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        return;
+      }
+      String reqUrl =
+          '${APIHost().APIURL}/project_management.php/tender_find';
+      final response = await http.post(
+        Uri.parse(reqUrl),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"Authorization": token,
+          "project_name": project}),
+      );
+      if (response.statusCode == 200) {
+        try {
+          final responseData =
+          jsonDecode(response.body) as Map<String, dynamic>;
+          String tender;
+          // Check the status and process the response data
+          if (responseData['status'] == 200) {
+            List<dynamic> dataList = responseData['data'] ?? [];
+            for (var item in dataList) {
+              if (item.containsKey('tender')) {
+                _txtTender.text=item['tender'];
+              }
+            }
+            setState(() {
+
+            });
+
+            _loadProjectsLocationList(project);
+
+          } else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(text: e.toString());
+        }
+      } else {
+        PD.pd(text: "HTTP Error: ${response.statusCode}");
+      }
+    } catch (e) {
+      PD.pd(text: e.toString());
+    } finally {
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+    }
+  }
 
 
 
@@ -423,14 +483,15 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                       controller: _dropdown1Controller,
                       onChanged: (value) {
                         _selectedProjectName = value;
-                        _loadProjectsLocationList(_selectedProjectName.toString());
+                        _loadTenderNumber(_selectedProjectName.toString());
+
                       },
                     ),
 
                     buildTextField(_txtLocationName, 'Location Name',
-                        'Colombo water', Icons.create, true, 45),
+                        'Building construction downtown', Icons.create, true, 45),
                     buildTextField(
-                        _txtTender, 'Tender', 'TX00001', Icons.query_builder, true, 20),
+                        _txtTender, 'Tender Number', 'TX00001', Icons.query_builder, true, 20),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -479,14 +540,12 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
           "change_by": UserCredentials().UserName,
         }),
       );
-
-      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+     // PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
       if (response.statusCode == 200) {
         WaitDialog.hideDialog(context);
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final int status = responseData['status'];
-
           if (status == 200) {
             PD.pd(text: responseData.toString());
             OneBtnDialog.oneButtonDialog(context,
@@ -496,7 +555,8 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
                 icon: Icons.verified_outlined,
                 iconColor: Colors.black,
                 btnColor: Colors.green);
-            _loadProjectsLocationList(_selectedProjectName.toString());
+            createNewEstimationId();
+
           } else {
             final String message = responseData['message'] ?? 'Error';
             PD.pd(text: message);
@@ -527,6 +587,139 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
         WaitDialog.hideDialog(context);
         String errorMessage =
             'Project Management location creating failed with status code ${response
+            .statusCode}';
+        if (response.body.isNotEmpty) {
+          try {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorMessage;
+          } catch (e) {
+            errorMessage = response.body;
+          }
+        }
+        PD.pd(text: errorMessage);
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'HTTP Error',
+          message: errorMessage,
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'An error occurred: $e';
+      if (e is FormatException) {
+        errorMessage = 'Invalid JSON response';
+      } else if (e is SocketException) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      WaitDialog.hideDialog(context);
+      PD.pd(text: errorMessage);
+      ExceptionDialog.exceptionDialog(
+        context,
+        title: 'General Error',
+        message: errorMessage,
+        btnName: 'OK',
+        icon: Icons.error,
+        iconColor: Colors.red,
+        btnColor: Colors.black,
+      );
+    }
+  }
+
+
+  Future<void> createNewEstimationId() async {
+    // Add BuildContext
+    try {
+      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      String? token = APIToken().token;
+      if (token == null || token.isEmpty) {
+        PD.pd(text: "Authentication token is missing.");
+        ExceptionDialog.exceptionDialog(
+          context,
+          title: 'Authentication Error',
+          message: "Authentication token is missing.",
+          btnName: 'OK',
+          icon: Icons.error,
+          iconColor: Colors.red,
+          btnColor: Colors.black,
+        );
+        return;
+      }
+
+      PD.pd(text: "Token: $token");
+      String a = '${APIHost().APIURL}/estimation_management.php/create_estimation';
+      final response = await http.post(
+        Uri.parse(a),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "Authorization": APIToken().token,
+          "location_name": _txtLocationName.text,
+          "project_name": _selectedProjectName.toString(),
+          "is_active": '1',
+          "created_by": UserCredentials().UserName,
+        }),
+      );
+      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+      if (response.statusCode == 200) {
+        WaitDialog.hideDialog(context);
+        try {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final int status = responseData['status'];
+          if (status == 200) {
+            PD.pd(text: responseData.toString());
+            OneBtnDialog.oneButtonDialog(context,
+                title: "Successful",
+                message: responseData['message'],
+                btnName: 'Ok',
+                icon: Icons.verified_outlined,
+                iconColor: Colors.black,
+                btnColor: Colors.green);
+            _loadProjectsLocationList(_selectedProjectName.toString());
+          }
+          else if (status == 409) {
+            PD.pd(text: responseData.toString());
+            OneBtnDialog.oneButtonDialog(context,
+                title: "Scanning",
+                message: responseData['message'],
+                btnName: 'Ok',
+                icon: Icons.find_in_page,
+                iconColor: Colors.black,
+                btnColor: Colors.green);
+          }
+          else {
+            final String message = responseData['message'] ?? 'Error';
+            PD.pd(text: message);
+            OneBtnDialog.oneButtonDialog(
+              context,
+              title: 'Error',
+              message: message,
+              btnName: 'OK',
+              icon: Icons.error,
+              iconColor: Colors.red,
+              btnColor: Colors.black,
+            );
+          }
+        } catch (e) {
+          PD.pd(
+              text: "Error decoding JSON: $e, Body: ${response.body}"); // Debug
+          ExceptionDialog.exceptionDialog(
+            context,
+            title: 'JSON Error',
+            message: "Error decoding JSON response: $e",
+            btnName: 'OK',
+            icon: Icons.error,
+            iconColor: Colors.red,
+            btnColor: Colors.black,
+          );
+        }
+      } else {
+        WaitDialog.hideDialog(context);
+        String errorMessage =
+            'estimation creating failed with status code ${response
             .statusCode}';
         if (response.body.isNotEmpty) {
           try {
@@ -652,7 +845,6 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
       itemCount: _activeProjectsLocationList.length,
       itemBuilder: (context, index) {
         final location = _activeProjectsLocationList[index];
-
         TextEditingController _txtLocationNameController = TextEditingController(
             text: location['location_name']);
         TextEditingController _txtProjectName = TextEditingController(
@@ -661,6 +853,7 @@ class _LocationCostCreateState extends State<LocationCostCreate> {
             text: location['tender_cost']);
         TextEditingController _txtEstimation = TextEditingController(
             text: location['exp_estimation_cost']);
+
 
         return Card(
           elevation: 6,
