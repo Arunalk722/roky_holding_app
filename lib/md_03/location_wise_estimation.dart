@@ -38,7 +38,7 @@ class _LocationManagementState extends State<LocationManagement> {
     });
 
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading estimations');
+      //WaitDialog.showWaitDialog(context, message: 'Loading estimations');
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         return;
@@ -97,9 +97,9 @@ class _LocationManagementState extends State<LocationManagement> {
         _isEstimationLoad = false;
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
@@ -114,7 +114,7 @@ class _LocationManagementState extends State<LocationManagement> {
       _isProjectsDropDown = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading project');
+      //WaitDialog.showWaitDialog(context, message: 'Loading project');
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         return;
@@ -161,9 +161,9 @@ class _LocationManagementState extends State<LocationManagement> {
       setState(() {
         _isProjectsDropDown = false;
       });
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
 
     }
 
@@ -179,7 +179,7 @@ class _LocationManagementState extends State<LocationManagement> {
       _isProjectLocationDropDown = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading location');
+      //WaitDialog.showWaitDialog(context, message: 'Loading location');
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         return;
@@ -227,9 +227,9 @@ class _LocationManagementState extends State<LocationManagement> {
       setState(() {
         _isProjectLocationDropDown = false;
       });
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
 
     }
 
@@ -248,7 +248,7 @@ class _LocationManagementState extends State<LocationManagement> {
       _isLoadingWorksList = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading works');
+  //    //WaitDialog.showWaitDialog(context, message: 'Loading works');
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
@@ -299,9 +299,9 @@ class _LocationManagementState extends State<LocationManagement> {
         _isLoadingWorksList = false;
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
@@ -317,7 +317,7 @@ class _LocationManagementState extends State<LocationManagement> {
       _isLoadingCostList = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading works');
+      //WaitDialog.showWaitDialog(context, message: 'Loading works');
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
@@ -370,9 +370,9 @@ class _LocationManagementState extends State<LocationManagement> {
         _isLoadingCostList = false;
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
@@ -387,7 +387,7 @@ class _LocationManagementState extends State<LocationManagement> {
       _isLoadingMaterialList = true;
     });
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+     // //WaitDialog.showWaitDialog(context, message: 'Loading material list');
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
@@ -443,9 +443,9 @@ class _LocationManagementState extends State<LocationManagement> {
         _isLoadingMaterialList = false;
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
@@ -495,7 +495,7 @@ class _LocationManagementState extends State<LocationManagement> {
 
   Future<void> _loadMaterialInfo(String? workName, String? costCategory, String? materialName) async {
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+      //WaitDialog.showWaitDialog(context, message: 'Loading material list');
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
@@ -553,9 +553,9 @@ class _LocationManagementState extends State<LocationManagement> {
         _isLoadingMaterialList = false;
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      // if (Navigator.canPop(context)) {
+      //   Navigator.pop(context);
+      // }
     }
   }
 
@@ -575,7 +575,7 @@ class _LocationManagementState extends State<LocationManagement> {
   Future<void> createEstimationList() async {
     // Add BuildContext
     try {
-      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      //WaitDialog.showWaitDialog(context, message: 'location estimations');
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         PD.pd(text: "Authentication token is missing.");
@@ -613,7 +613,7 @@ class _LocationManagementState extends State<LocationManagement> {
 
       PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
       if (response.statusCode == 200) {
-        WaitDialog.hideDialog(context);
+       // WaitDialog.hideDialog(context);
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final int status = responseData['status'];
@@ -627,7 +627,7 @@ class _LocationManagementState extends State<LocationManagement> {
                 icon: Icons.verified_outlined,
                 iconColor: Colors.black,
                 btnColor: Colors.green);
-          //  _loadProjectsLocationList(_selectedProjectName.toString());
+            //  _loadProjectsLocationList(_selectedProjectName.toString());
 
             clearData();
           } else {
@@ -657,7 +657,7 @@ class _LocationManagementState extends State<LocationManagement> {
           );
         }
       } else {
-        WaitDialog.hideDialog(context);
+       // WaitDialog.hideDialog(context);
         String errorMessage =
             'estimation creating failed with status code ${response
             .statusCode}';
@@ -687,7 +687,7 @@ class _LocationManagementState extends State<LocationManagement> {
       } else if (e is SocketException) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      WaitDialog.hideDialog(context);
+     // WaitDialog.hideDialog(context);
       PD.pd(text: errorMessage);
       ExceptionDialog.exceptionDialog(
         context,
@@ -704,7 +704,7 @@ class _LocationManagementState extends State<LocationManagement> {
   Future<void> createNewEstimationId() async {
     // Add BuildContext
     try {
-      WaitDialog.showWaitDialog(context, message: 'location estimations');
+     // //WaitDialog.showWaitDialog(context, message: 'location estimations');
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
         PD.pd(text: "Authentication token is missing.");
@@ -737,7 +737,7 @@ class _LocationManagementState extends State<LocationManagement> {
       );
       PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
       if (response.statusCode == 200) {
-        WaitDialog.hideDialog(context);
+      // // WaitDialog.hideDialog(context);
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final int status = responseData['status'];
@@ -762,7 +762,6 @@ class _LocationManagementState extends State<LocationManagement> {
                 icon: Icons.find_in_page,
                 iconColor: Colors.black,
                 btnColor: Colors.green);
-            //  _loadProjectsLocationList(_selectedProjectName.toString());
             _loadProjectsLocationEstimationList();
           }
           else {
@@ -792,7 +791,7 @@ class _LocationManagementState extends State<LocationManagement> {
           );
         }
       } else {
-        WaitDialog.hideDialog(context);
+      // // WaitDialog.hideDialog(context);
         String errorMessage =
             'estimation creating failed with status code ${response
             .statusCode}';
@@ -822,7 +821,7 @@ class _LocationManagementState extends State<LocationManagement> {
       } else if (e is SocketException) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      WaitDialog.hideDialog(context);
+     //// WaitDialog.hideDialog(context);
       PD.pd(text: errorMessage);
       ExceptionDialog.exceptionDialog(
         context,
@@ -837,11 +836,11 @@ class _LocationManagementState extends State<LocationManagement> {
   }
 
   void clearData(){
-     _materialId='';
-     _price='';
-     _qty='';
-     _unit='';
-     amount=0;
+    _materialId='';
+    _price='';
+    _qty='';
+    _unit='';
+    amount=0;
     _txtEstimationAmount.text='';
     _txtQty.text='';
     _txtDescriptions.text='';
@@ -859,22 +858,22 @@ class _LocationManagementState extends State<LocationManagement> {
             padding: const EdgeInsets.all(20.0),
             child: isWideScreen
                 ? Row(
-                    // Two columns if screen is wide
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildCreateEstimationForm()),
-                      const SizedBox(width: 20), // Spacing between columns
-                      Expanded(child: _buildActiveEstimationListCard()),
-                    ],
-                  )
+              // Two columns if screen is wide
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildCreateEstimationForm()),
+                const SizedBox(width: 20), // Spacing between columns
+                Expanded(child: _buildActiveEstimationListCard()),
+              ],
+            )
                 : Column(
-                    // Stack in a single column if screen is narrow
-                    children: [
-                      _buildCreateEstimationForm(),
-                      const SizedBox(height: 20), // Spacing between sections
-                      _buildActiveEstimationListCard(),
-                    ],
-                  ),
+              // Stack in a single column if screen is narrow
+              children: [
+                _buildCreateEstimationForm(),
+                const SizedBox(height: 20), // Spacing between sections
+                _buildActiveEstimationListCard(),
+              ],
+            ),
           );
         },
       ),
@@ -969,19 +968,19 @@ class _LocationManagementState extends State<LocationManagement> {
                       onChanged: (value) {
                         _selectedValueMaterial = value;
                         _loadMaterialInfo(_selectedValueWorkType.toString(),_selectedValueCostCategory.toString(),_selectedValueMaterial.toString());
-                      //  PD.pd(text: _selectedValueWorkType.toString());
+                        //  PD.pd(text: _selectedValueWorkType.toString());
                       },
                     ),
                     buildTextField(_txtDescriptions, 'Descriptions', 'Cement', Icons.description, true, 45),
                     Visibility(
                         visible: false,
                         child: Column(
-                        children:<Widget> [
-                       buildDetailRow('Material ID',_materialId ),
-                       buildDetailRow('Price', _price),
-                       buildDetailRow('Qty', '$_qty $_unit'),
-                      ],
-                    )),
+                          children:<Widget> [
+                            buildDetailRow('Material ID',_materialId ),
+                            buildDetailRow('Price', _price),
+                            buildDetailRow('Qty', '$_qty $_unit'),
+                          ],
+                        )),
                     Row(
                       children: [
                         Expanded(
@@ -999,15 +998,15 @@ class _LocationManagementState extends State<LocationManagement> {
                             },
                           ),),
 
-                          SizedBox(width: 10), // Space between fields
+                        SizedBox(width: 10), // Space between fields
                         Expanded( flex:5 ,
                             child: buildNumberField(
                                 _txtEstimationAmount,
-                              'Estimate Material Cost/Work Cost',
-                              '1500 LKR',
-                              Icons.attach_money,
-                              true,
-                              10,null)
+                                'Estimate Material Cost/Work Cost',
+                                '1500 LKR',
+                                Icons.attach_money,
+                                true,
+                                10,null)
                         ),
                       ],
                     ),
@@ -1031,7 +1030,7 @@ class _LocationManagementState extends State<LocationManagement> {
           PD.pd(text: "Form is valid!");
           PD.pd(
               text:
-                  "Selected Work Type: $_selectedValueWorkType");
+              "Selected Work Type: $_selectedValueWorkType");
 
           YNDialogCon.ynDialogMessage(
             context,
@@ -1127,7 +1126,7 @@ class _LocationManagementState extends State<LocationManagement> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                 // Icon(Icons.lo, color: Theme.of(context).primaryColor, size: 36),
+                  // Icon(Icons.lo, color: Theme.of(context).primaryColor, size: 36),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
