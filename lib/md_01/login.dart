@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:roky_holding/env/api_info.dart';
+import 'package:roky_holding/env/app_versions.dart';
 import 'package:roky_holding/md_01/registration.dart';
 import 'package:roky_holding/md_02/home_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../env/DialogBoxs.dart';
 import '../env/input_widget.dart';
 import '../env/print_debug.dart';
@@ -178,12 +178,10 @@ class _LoginAppState extends State<LoginApp> {
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   buildTextField(_userName, 'User Name',
                       'Enter your user name', Icons.person, true, 20),
                   buildPwdTextField(_password, 'Password',
                       'Your password', Icons.password_rounded, true, 20),
-
                   ElevatedButton(
                     onPressed: () {
                       loginSystem();
@@ -217,6 +215,7 @@ class _LoginAppState extends State<LoginApp> {
                       style: TextStyle(color: Colors.blueAccent),
                     ),
                   ),
+                  AppVersionTile()
                 ],
               ),
             ),
