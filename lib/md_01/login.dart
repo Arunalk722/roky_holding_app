@@ -26,8 +26,8 @@ class _LoginAppState extends State<LoginApp> {
   @override
   void initState() {
     super.setState(() {
-      _userName.text = 'admin';
-      _password.text = '123Admin@';
+      // _userName.text = 'admin';
+      // _password.text = '123Admin@';
      // PD.pd(text: logo);
     });
   }
