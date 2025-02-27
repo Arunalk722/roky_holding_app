@@ -453,7 +453,7 @@ class _LocationManagementState extends State<LocationManagement> {
 
 
   //Text field controllers and validation
-  
+
   final _txtProjectDropdown = TextEditingController();
   final _txtProjectLocationDropdown = TextEditingController();
   final _txtMaterialDropDown = TextEditingController();
@@ -591,7 +591,6 @@ class _LocationManagementState extends State<LocationManagement> {
         return;
       }
 
-      PD.pd(text: "Token: $token");
       String a = '${APIHost().APIURL}/estimation_management.php/Create_Estimation_List';
       final response = await http.post(
         Uri.parse(a),
@@ -989,15 +988,18 @@ class _LocationManagementState extends State<LocationManagement> {
                           flex:5 ,
                           child:
                           buildNumberField(
-                              _txtQty,
-                              'Estimate Qty',
-                              '1',
-                              Icons.numbers,
-                              true,
-                              5
-                              ,null),
-                        ),
-                        SizedBox(width: 10), // Space between fields
+                            _txtQty,
+                            'Estimate Qty',
+                            '1',
+                            Icons.numbers,
+                            true,
+                            5,
+                                (value) {
+                              print('User entered: $value'); // Example action
+                            },
+                          ),),
+
+                          SizedBox(width: 10), // Space between fields
                         Expanded( flex:5 ,
                             child: buildNumberField(
                                 _txtEstimationAmount,

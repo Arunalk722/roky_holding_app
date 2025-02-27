@@ -300,32 +300,32 @@ class _CustomDropdownState extends State<CustomDropdown> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-        child:
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: widget.label,
-            border: const OutlineInputBorder(),
-            prefixIcon: Icon(widget.icon),
-          ),
-          value: widget.suggestions.contains(selectedValue) ? selectedValue : null, // Ensure value exists
-          items: widget.suggestions.map((value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedValue = value;
-              widget.controller.text = value ?? '';
-            });
-            if (widget.onChanged != null) {
-              widget.onChanged!(value);
-            }
-          },
-          validator: (value) =>
-          value == null || value.isEmpty ? 'Please select a value' : null,
-        )
+      child:
+      DropdownButtonFormField<String>(
+        decoration: InputDecoration(
+          labelText: widget.label,
+          border: const OutlineInputBorder(),
+          prefixIcon: Icon(widget.icon),
+        ),
+        value: widget.suggestions.contains(selectedValue) ? selectedValue : null, // Ensure value exists
+        items: widget.suggestions.map((value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            selectedValue = value;
+            widget.controller.text = value ?? '';
+          });
+          if (widget.onChanged != null) {
+            widget.onChanged!(value);
+          }
+        },
+        validator: (value) =>
+        value == null || value.isEmpty ? 'Please select a value' : null,
+      )
       ,
 
     );
