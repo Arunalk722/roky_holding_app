@@ -69,7 +69,7 @@ class _LocationManagementState extends State<LocationManagement> {
             setState(() {
               _activeEstimationList = List.from(responseData['data'] ?? []);
             });
-
+          PD.pd(text: responseData.toString());
             // Print out the data for debugging
           } else {
             final String message = responseData['message'] ?? 'Error';
@@ -1014,84 +1014,63 @@ class _LocationManagementState extends State<LocationManagement> {
 
     if (_activeEstimationList.isEmpty) {
       return const Center(
-          child: Text(
-            'No active estimation found.',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ));
+        child: Text(
+          'No active estimation found.',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeEstimationList.length,
-      itemBuilder: (context, index) {
-        final estimation = _activeEstimationList[index];
-
-        TextEditingController _txtMaterialDescription = TextEditingController(
-            text: estimation['material_description'].toString());
-
-        return Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade100, Colors.blue.shade50],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: InkWell(
-              onTap: () {},
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                 // Icon(Icons.lo, color: Theme.of(context).primaryColor, size: 36),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(child: buildDetailRow('Estimation ID', estimation['estimation_id'].toString())),
-                        Visibility(visible: false,child: buildDetailRow('List ID', estimation['idtbl_project_location_estimations_list'].toString()),),
-                        buildDetailRow('Material', estimation['idtbl_material_list'].toString()),
-                        buildDetailRow('Qty', estimation['estimate_qty'].toString()),
-                        buildDetailRow('Amount', '${estimation['estimate_amount']}.LKR'),
-                        buildDetailRow('Actual Cost', '${estimation['actual_cost']}.LKR'),
-                        buildDetailRow('Unit Cost', '${estimation['actual_unit_amount']}.LKR'),
-
-                        buildTextFieldReadOnly(
-                            _txtMaterialDescription, 'Material', '', Icons.construction, true, 45),
-
-                        const Divider(thickness: 1, color: Colors.grey),
-
-                        buildDetailRow(
-                          'Created:',
-                          '${estimation['created_by']} on ${estimation['created_date']}',
-                        ),
-                        buildDetailRow(
-                          'Changed:',
-                          '${estimation['change_by']} on ${estimation['change_date']}',
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Save Button with Color
-                  IconButton(
-                    icon: const Icon(Icons.save, color: Colors.green, size: 28),
-                    onPressed: () {
-                      // Call API to save updates
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 600),
+        child: DataTable(
+          border: TableBorder.all(width: 1, color: Colors.grey),
+          columnSpacing: 5, // Reduce column spacing
+          dataRowMinHeight: 30,
+          dataRowMaxHeight: 40,
+          headingRowHeight: 35,
+          columns: [
+            _buildDataColumn('Material'),
+            _buildDataColumn('Qty'),
+            _buildDataColumn('Amount (LKR)'),
+            _buildDataColumn('Actual Cost (LKR)'),
+            _buildDataColumn('Unit Cost (LKR)'),
+            _buildDataColumn('Created By'),
+          ],
+          rows: _activeEstimationList.map((estimation) {
+            return DataRow(cells: [
+              _buildDataCell(estimation['material_description']),
+              _buildDataCell(estimation['estimate_qty']),
+              _buildDataCell('${estimation['estimate_amount']} LKR'),
+              _buildDataCell('${estimation['actual_cost']} LKR'),
+              _buildDataCell('${estimation['actual_unit_amount']} LKR'),
+              _buildDataCell('${estimation['created_by']} \n${estimation['created_date']}'),
+            ]);
+          }).toList(),
+        ),
+      ),
     );
   }
+
+  DataColumn _buildDataColumn(String title) {
+    return DataColumn(
+      label: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+
+  DataCell _buildDataCell(String value) {
+    return DataCell(
+      Text(
+        value,
+        style: TextStyle(fontSize: 12),
+      ),
+    );
+  }
+
+
 }

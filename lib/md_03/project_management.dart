@@ -394,14 +394,14 @@ class _ProjectManagementScreenState extends State<ProjectManagementScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            _buildActiveProjectsList(isWideScreen),
+            _buildActiveProjectsTable(isWideScreen),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActiveProjectsList(isWideScreen) {
+  Widget _buildActiveProjectsTable(bool isWideScreen) {
     if (_isLoadingProjects) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -410,225 +410,112 @@ class _ProjectManagementScreenState extends State<ProjectManagementScreen> {
       return const Center(child: Text('No active projects found.'));
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeProjects.length,
-      itemBuilder: (context, index) {
-        final project = _activeProjects[index];
-        return Card(
-          // ... (card styling)
-          child: InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 600),
+        child: DataTable(
+          border: TableBorder.all(width: 1, color: Colors.grey),
+          columnSpacing: 12,
+          dataRowMinHeight: 40,
+          dataRowMaxHeight: 50,
+          headingRowHeight: 45,
+          columns: [
+            _buildDataColumn('Project Name'),
+            _buildDataColumn('Tender'),
+            _buildDataColumn('Estimated Cost'),
+            _buildDataColumn('Tender Cost'),
+            _buildDataColumn('Actions'),
+          ],
+          rows: _activeProjects.map((project) {
+            return DataRow(cells: [
+              DataCell(Text(project['project_name'] ?? 'N/A')),
+              DataCell(Text(project['tender'] ?? 'N/A')),
+              DataCell(Text('${project['exp_estimation_cost'] ?? '0'} LKR')),
+              DataCell(Text('${project['tender_cost'] ?? '0'} LKR')),
+              DataCell(Row(
                 children: [
-                  Icon(Icons.business, color: Theme.of(context).primaryColor),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project['project_name'] ?? 'Project Name',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tender: ${project['tender'] ?? 'Tender Number'}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        // Add more details here if needed
-                      ],
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      _editProject(project);
+                    },
                   ),
-                  // View Button
-                  isWideScreen?
-                  Row(
-                    children: [IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        PD.pd(text: project.toString());
-                        _isActive = project['is_active'] == '0'
-                            ? false
-                            : true; // Handle null case
-                        _userVisible = project['user_visible'] == '0'
-                            ? false
-                            : true; // Handle null case
-                        _txtTender.text =
-                            project['tender'] ?? ''; // Update text field
-                        _txtProjectName.text =
-                            project['project_name'] ?? '';
-                        _txtProjectId.text =
-                            project['idtbl_projects']?.toString() ?? '0';
-                        _txtTotalEstimation.text =
-                            project['exp_estimation_cost']?.toString() ?? '';
-                        _txtTenderCost.text =
-                            project['tender_cost']?.toString() ?? '';
-                        setState(() {});
-                        PD.pd(text: "View project: ${project['tender']}");
-                      },
+                  IconButton(
+                    icon: Icon(
+                      project['user_visible'] == 1
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility,
+                      color: project['user_visible'] == 1 ? Colors.blue : Colors.red,
                     ),
-                      IconButton(
-                        icon: Icon(project['user_visible'] as int == 1
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility),
-                        color: project['user_visible'] as int == 1
-                            ? Colors.blue
-                            : Colors.red,
-                        onPressed: () async {
-                          int vis = project['user_visible'] as int;
-                          String mg =
-                          vis == 0 ? 'visibility enable' : 'visibility disable';
-                          int result = await YNDialogCon.ynDialogMessage(
-                            context,
-                            messageTitle: mg,
-                            messageBody:
-                            "Are you sure you want to $mg project ${project['tender']}?",
-                            icon: vis == 0
-                                ? Icons.visibility
-                                : Icons.visibility_off_outlined,
-                            iconColor: Colors.orange,
-                            btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
-                            btnClose: "Cancel",
-                          );
-                          if (result == 1) {
-                            _changeVisibility(
-                                context,
-                                '${project['idtbl_projects']}',
-                                project['user_visible'] == '0' ? false : true);
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete,
-                            color: Colors.red), // Red color for delete action
-                        onPressed: ()
-
-
-                        async {
-                          PD.pd(
-                              text:
-                              "Deleting project: ${project['idtbl_projects']}");
-                          int result = await YNDialogCon.ynDialogMessage(
-                            context,
-                            messageTitle: "Confirm Deletion",
-                            messageBody:
-                            "Are you sure you want to delete project ${project['tender']}?",
-                            icon: Icons.warning,
-                            iconColor: Colors.orange,
-                            btnDone: "Yes, Delete",
-                            btnClose: "Cancel",
-                          );
-
-                          if (result == 1) {
-                            PD.pd(
-                                text:
-                                "Deleting project: ${project['idtbl_projects']}");
-                            _deleteProject(context,project['idtbl_projects']); // Call delete function after confirmation
-                          }
-                        },
-                      ),],
-                  ):Column(
-                    children: [IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        PD.pd(text: project.toString());
-                        _isActive = project['is_active'] == '0'
-                            ? false
-                            : true; // Handle null case
-                        _userVisible = project['user_visible'] == '0'
-                            ? false
-                            : true; // Handle null case
-                        _txtTender.text =
-                            project['tender'] ?? ''; // Update text field
-                        _txtProjectName.text =
-                            project['project_name'] ?? '';
-                        _txtProjectId.text =
-                            project['idtbl_projects']?.toString() ?? '0';
-                        _txtTotalEstimation.text =
-                            project['exp_estimation_cost']?.toString() ?? '';
-                        _txtTenderCost.text =
-                            project['tender_cost']?.toString() ?? '';
-                        setState(() {});
-                        PD.pd(text: "View project: ${project['tender']}");
-                      },
-                    ),
-                      IconButton(
-                        icon: Icon(project['user_visible'] as int == 1
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility),
-                        color: project['user_visible'] as int == 1
-                            ? Colors.blue
-                            : Colors.red,
-                        onPressed: () async {
-                          int vis = project['user_visible'] as int;
-                          String mg =
-                          vis == 0 ? 'visibility enable' : 'visibility disable';
-                          int result = await YNDialogCon.ynDialogMessage(
-                            context,
-                            messageTitle: mg,
-                            messageBody:
-                            "Are you sure you want to $mg project ${project['tender']}?",
-                            icon: vis == 0
-                                ? Icons.visibility
-                                : Icons.visibility_off_outlined,
-                            iconColor: Colors.orange,
-                            btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
-                            btnClose: "Cancel",
-                          );
-                          if (result == 1) {
-                            _changeVisibility(
-                                context,
-                                '${project['idtbl_projects']}',
-                                project['user_visible'] == '0' ? false : true);
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete,
-                            color: Colors.red), // Red color for delete action
-                        onPressed: ()
-
-
-                        async {
-                          PD.pd(
-                              text:
-                              "Deleting project: ${project['idtbl_projects']}");
-                          int result = await YNDialogCon.ynDialogMessage(
-                            context,
-                            messageTitle: "Confirm Deletion",
-                            messageBody:
-                            "Are you sure you want to delete project ${project['tender']}?",
-                            icon: Icons.warning,
-                            iconColor: Colors.orange,
-                            btnDone: "Yes, Delete",
-                            btnClose: "Cancel",
-                          );
-
-                          if (result == 1) {
-                            PD.pd(
-                                text:
-                                "Deleting project: ${project['idtbl_projects']}");
-                            _deleteProject(context,project['idtbl_projects']); // Call delete function after confirmation
-                          }
-                        },
-                      ),],
-                  )
-
-                  // const Icon(Icons.arrow_forward_ios, size: 16), // Optional arrow
+                    onPressed: () => _toggleVisibility(context, project),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _confirmDeleteProject(context, project),
+                  ),
                 ],
-              ),
-            ),
-          ),
-        );
-      },
+              )),
+            ]);
+          }).toList(),
+        ),
+      ),
     );
   }
+
+  void _editProject(Map<String, dynamic> project) {
+    _isActive = project['is_active'] == '1';
+    _userVisible = project['user_visible'] == '1';
+    _txtTender.text = project['tender'] ?? '';
+    _txtProjectName.text = project['project_name'] ?? '';
+    _txtProjectId.text = project['idtbl_projects']?.toString() ?? '0';
+    _txtTotalEstimation.text = project['exp_estimation_cost']?.toString() ?? '';
+    _txtTenderCost.text = project['tender_cost']?.toString() ?? '';
+    setState(() {});
+  }
+
+  void _toggleVisibility(BuildContext context, Map<String, dynamic> project) async {
+    int vis = project['user_visible'] as int;
+    String mg = vis == 0 ? 'enable visibility' : 'disable visibility';
+    int result = await YNDialogCon.ynDialogMessage(
+      context,
+      messageTitle: mg,
+      messageBody: "Are you sure you want to $mg project ${project['tender']}?",
+      icon: vis == 0 ? Icons.visibility : Icons.visibility_off_outlined,
+      iconColor: Colors.orange,
+      btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
+      btnClose: "Cancel",
+    );
+    if (result == 1) {
+      _changeVisibility(context, project['idtbl_projects'].toString(), vis == 0);
+    }
+  }
+
+  void _confirmDeleteProject(BuildContext context, Map<String, dynamic> project) async {
+    int result = await YNDialogCon.ynDialogMessage(
+      context,
+      messageTitle: "Confirm Deletion",
+      messageBody: "Are you sure you want to delete project ${project['tender']}?",
+      icon: Icons.warning,
+      iconColor: Colors.orange,
+      btnDone: "Yes, Delete",
+      btnClose: "Cancel",
+    );
+
+    if (result == 1) {
+      _deleteProject(context, project['idtbl_projects']);
+    }
+  }
+
+  DataColumn _buildDataColumn(String title) {
+    return DataColumn(
+      label: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+      ),
+    );
+  }
+
 
   //create project
   Future<void> createProjectManagement(BuildContext context) async {
@@ -1144,3 +1031,236 @@ class _ProjectManagementScreenState extends State<ProjectManagementScreen> {
     _isActive = false;
   }
 }
+
+
+/*
+  Widget _buildActiveProjectsList(isWideScreen) {
+    if (_isLoadingProjects) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_activeProjects.isEmpty) {
+      return const Center(child: Text('No active projects found.'));
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _activeProjects.length,
+      itemBuilder: (context, index) {
+        final project = _activeProjects[index];
+        return Card(
+          // ... (card styling)
+          child: InkWell(
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Icon(Icons.business, color: Theme.of(context).primaryColor),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          project['project_name'] ?? 'Project Name',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tender: ${project['tender'] ?? 'Tender Number'}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        // Add more details here if needed
+                      ],
+                    ),
+                  ),
+                  // View Button
+                  isWideScreen?
+                  Row(
+                    children: [IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        PD.pd(text: project.toString());
+                        _isActive = project['is_active'] == '0'
+                            ? false
+                            : true; // Handle null case
+                        _userVisible = project['user_visible'] == '0'
+                            ? false
+                            : true; // Handle null case
+                        _txtTender.text =
+                            project['tender'] ?? ''; // Update text field
+                        _txtProjectName.text =
+                            project['project_name'] ?? '';
+                        _txtProjectId.text =
+                            project['idtbl_projects']?.toString() ?? '0';
+                        _txtTotalEstimation.text =
+                            project['exp_estimation_cost']?.toString() ?? '';
+                        _txtTenderCost.text =
+                            project['tender_cost']?.toString() ?? '';
+                        setState(() {});
+                        PD.pd(text: "View project: ${project['tender']}");
+                      },
+                    ),
+                      IconButton(
+                        icon: Icon(project['user_visible'] as int == 1
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility),
+                        color: project['user_visible'] as int == 1
+                            ? Colors.blue
+                            : Colors.red,
+                        onPressed: () async {
+                          int vis = project['user_visible'] as int;
+                          String mg =
+                          vis == 0 ? 'visibility enable' : 'visibility disable';
+                          int result = await YNDialogCon.ynDialogMessage(
+                            context,
+                            messageTitle: mg,
+                            messageBody:
+                            "Are you sure you want to $mg project ${project['tender']}?",
+                            icon: vis == 0
+                                ? Icons.visibility
+                                : Icons.visibility_off_outlined,
+                            iconColor: Colors.orange,
+                            btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
+                            btnClose: "Cancel",
+                          );
+                          if (result == 1) {
+                            _changeVisibility(
+                                context,
+                                '${project['idtbl_projects']}',
+                                project['user_visible'] == '0' ? false : true);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            color: Colors.red), // Red color for delete action
+                        onPressed: ()
+
+
+                        async {
+                          PD.pd(
+                              text:
+                              "Deleting project: ${project['idtbl_projects']}");
+                          int result = await YNDialogCon.ynDialogMessage(
+                            context,
+                            messageTitle: "Confirm Deletion",
+                            messageBody:
+                            "Are you sure you want to delete project ${project['tender']}?",
+                            icon: Icons.warning,
+                            iconColor: Colors.orange,
+                            btnDone: "Yes, Delete",
+                            btnClose: "Cancel",
+                          );
+
+                          if (result == 1) {
+                            PD.pd(
+                                text:
+                                "Deleting project: ${project['idtbl_projects']}");
+                            _deleteProject(context,project['idtbl_projects']); // Call delete function after confirmation
+                          }
+                        },
+                      ),],
+                  ):Column(
+                    children: [IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        PD.pd(text: project.toString());
+                        _isActive = project['is_active'] == '0'
+                            ? false
+                            : true; // Handle null case
+                        _userVisible = project['user_visible'] == '0'
+                            ? false
+                            : true; // Handle null case
+                        _txtTender.text =
+                            project['tender'] ?? ''; // Update text field
+                        _txtProjectName.text =
+                            project['project_name'] ?? '';
+                        _txtProjectId.text =
+                            project['idtbl_projects']?.toString() ?? '0';
+                        _txtTotalEstimation.text =
+                            project['exp_estimation_cost']?.toString() ?? '';
+                        _txtTenderCost.text =
+                            project['tender_cost']?.toString() ?? '';
+                        setState(() {});
+                        PD.pd(text: "View project: ${project['tender']}");
+                      },
+                    ),
+                      IconButton(
+                        icon: Icon(project['user_visible'] as int == 1
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility),
+                        color: project['user_visible'] as int == 1
+                            ? Colors.blue
+                            : Colors.red,
+                        onPressed: () async {
+                          int vis = project['user_visible'] as int;
+                          String mg =
+                          vis == 0 ? 'visibility enable' : 'visibility disable';
+                          int result = await YNDialogCon.ynDialogMessage(
+                            context,
+                            messageTitle: mg,
+                            messageBody:
+                            "Are you sure you want to $mg project ${project['tender']}?",
+                            icon: vis == 0
+                                ? Icons.visibility
+                                : Icons.visibility_off_outlined,
+                            iconColor: Colors.orange,
+                            btnDone: vis == 0 ? "Yes, Visible" : "Yes, Invisible",
+                            btnClose: "Cancel",
+                          );
+                          if (result == 1) {
+                            _changeVisibility(
+                                context,
+                                '${project['idtbl_projects']}',
+                                project['user_visible'] == '0' ? false : true);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            color: Colors.red), // Red color for delete action
+                        onPressed: ()
+
+
+                        async {
+                          PD.pd(
+                              text:
+                              "Deleting project: ${project['idtbl_projects']}");
+                          int result = await YNDialogCon.ynDialogMessage(
+                            context,
+                            messageTitle: "Confirm Deletion",
+                            messageBody:
+                            "Are you sure you want to delete project ${project['tender']}?",
+                            icon: Icons.warning,
+                            iconColor: Colors.orange,
+                            btnDone: "Yes, Delete",
+                            btnClose: "Cancel",
+                          );
+
+                          if (result == 1) {
+                            PD.pd(
+                                text:
+                                "Deleting project: ${project['idtbl_projects']}");
+                            _deleteProject(context,project['idtbl_projects']); // Call delete function after confirmation
+                          }
+                        },
+                      ),],
+                  )
+
+                  // const Icon(Icons.arrow_forward_ios, size: 16), // Optional arrow
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+ */

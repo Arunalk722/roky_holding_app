@@ -634,82 +634,66 @@ class _MaterialCreateState extends State<MaterialCreate> {
     }
 
     if (_activeMaterialListMap.isEmpty) {
-      return const Center(child: Text('No active materials found.'));
+      return const Center(
+        child: Text('No active materials found.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _activeMaterialListMap.length,
-      itemBuilder: (context, index) {
-        final material = _activeMaterialListMap[index];
-        return Card(
-          child: InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(Icons.business, color: Theme.of(context).primaryColor),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          material['material_name'] ?? 'Material Name',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Work Type: ${material['work_name'] ?? 'Unknown'}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          'Qty: ${material['qty'] ?? 'Unknown'} ${material['uom']}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          'Amount: ${material['amount'] ?? 'Unknown'}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(material['is_active'] == 1
-                        ? Icons.visibility
-                        : Icons.visibility_off_outlined),
-                    color: material['is_active'] == 1 ? Colors.blue : Colors.red,
-                    onPressed: () {
-                      PD.pd(text: "Toggled visibility for: ${material['material_name']}");
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon( Icons.edit),
-                    color: Colors.blue,
-                    onPressed: () {
-                      _showMaterialInputDialog(
-                        context,
-                        material['idtbl_material_list'],
-                        material['material_name'],
-                        double.tryParse(material['amount'].toString()) ?? 0.0, // Safely convert to double
-                        double.tryParse(material['qty'].toString()) ?? 0.0,
-                      );
-
-                    },
-                  ),
-                ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal, // Enable horizontal scrolling
+      child: DataTable(
+        border: TableBorder.all(width: 1, color: Colors.grey),
+        columnSpacing: 12, // Adjust column spacing
+        headingRowHeight: 40, // Header row height
+        dataRowMinHeight: 35, // Minimum row height
+        dataRowMaxHeight: 50, // Maximum row height
+        columns: const [
+          DataColumn(label: Text('Material Name', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Work Type', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Visibility', style: TextStyle(fontWeight: FontWeight.bold))),
+          DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+        ],
+        rows: _activeMaterialListMap.map<DataRow>((material) {
+          return DataRow(
+            cells: [
+              DataCell(Text(material['material_name'] ?? 'Unknown')),
+              DataCell(Text(material['work_name'] ?? 'Unknown')),
+              DataCell(Text('${material['qty']} ${material['uom'] ?? ''}')),
+              DataCell(Text('${material['amount']} LKR')),
+              DataCell(
+                IconButton(
+                  icon: Icon(material['is_active'] == 1
+                      ? Icons.visibility
+                      : Icons.visibility_off_outlined),
+                  color: material['is_active'] == 1 ? Colors.blue : Colors.red,
+                  onPressed: () {
+                    PD.pd(text: "Toggled visibility for: ${material['material_name']}");
+                  },
+                ),
               ),
-            ),
-          ),
-        );
-      },
+              DataCell(
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () {
+                    _showMaterialInputDialog(
+                      context,
+                      material['idtbl_material_list'],
+                      material['material_name'],
+                      double.tryParse(material['amount'].toString()) ?? 0.0,
+                      double.tryParse(material['qty'].toString()) ?? 0.0,
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
+
 }
 class MaterialInputDialog extends StatefulWidget {
   final int itemId;
