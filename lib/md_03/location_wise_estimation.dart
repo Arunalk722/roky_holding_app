@@ -495,11 +495,16 @@ class _LocationManagementState extends State<LocationManagement> {
 
   Future<void> _loadMaterialInfo(String? workName, String? costCategory, String? materialName) async {
     try {
-      WaitDialog.showWaitDialog(context, message: 'Loading material list');
+      // Show loading message via SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loading material list...'), duration: Duration(seconds: 2)),
+      );
 
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
-        PD.pd(text: "Error: No API token found.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: No API token found.'), backgroundColor: Colors.red),
+        );
         return;
       }
 
@@ -518,7 +523,6 @@ class _LocationManagementState extends State<LocationManagement> {
         }),
       );
 
-      PD.pd(text: reqUrl);
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['status'] == 200) {
@@ -528,26 +532,32 @@ class _LocationManagementState extends State<LocationManagement> {
               _materialId = materialData['idtbl_material_list'].toString();
               _qty = materialData['qty'];
               _price = materialData['amount'];
-              _unit=materialData['uom'];
+              _unit = materialData['uom'];
               _txtDescriptions.text = materialData['material_name'];
             });
-            PD.pd(text: responseData.toString());
-            PD.pd(text: "Material ID: $_materialId");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Material ID: $_materialId'), backgroundColor: Colors.green),
+            );
           } else {
-            PD.pd(text: "Error: No material data found.");
-            _showErrorDialog("No material data found.");
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No material data found.'), backgroundColor: Colors.red),
+            );
           }
         } else {
           final String message = responseData['message'] ?? 'Unknown Error';
-          PD.pd(text: message);
-          _showErrorDialog(message);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message), backgroundColor: Colors.red),
+          );
         }
       } else {
-        PD.pd(text: "HTTP Error: ${response.statusCode}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('HTTP Error: ${response.statusCode}'), backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
-      PD.pd(text: "Exception: $e");
-      _showErrorDialog("An error occurred while fetching materials.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Exception: $e'), backgroundColor: Colors.red),
+      );
     } finally {
       setState(() {
         _isLoadingMaterialList = false;
@@ -558,6 +568,7 @@ class _LocationManagementState extends State<LocationManagement> {
       }
     }
   }
+
 
   void _showErrorDialog(String message) {
     OneBtnDialog.oneButtonDialog(
@@ -573,27 +584,24 @@ class _LocationManagementState extends State<LocationManagement> {
 
 
   Future<void> createEstimationList() async {
-    // Add BuildContext
     try {
-      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      // Show loading message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Creating Estimation...'), duration: Duration(seconds: 2)),
+      );
+
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
-        PD.pd(text: "Authentication token is missing.");
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'Authentication Error',
-          message: "Authentication token is missing.",
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        // If token is missing, show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Authentication token is missing."), backgroundColor: Colors.red),
         );
         return;
       }
 
-      String a = '${APIHost().APIURL}/estimation_management.php/Create_Estimation_List';
+      String url = '${APIHost().APIURL}/estimation_management.php/Create_Estimation_List';
       final response = await http.post(
-        Uri.parse(a),
+        Uri.parse(url),
         headers: {
           "Content-Type": "application/json",
         },
@@ -605,62 +613,37 @@ class _LocationManagementState extends State<LocationManagement> {
           "is_active": '1',
           "created_by": UserCredentials().UserName,
           "estimate_amount": _txtEstimationAmount.text,
-          "estimation_gap":"0",
-          "estimate_qty":_txtQty.text,
-          "material_description":_txtDescriptions.text
+          "estimation_gap": "0",
+          "estimate_qty": _txtQty.text,
+          "material_description": _txtDescriptions.text,
         }),
       );
 
-      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
       if (response.statusCode == 200) {
-        WaitDialog.hideDialog(context);
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final int status = responseData['status'];
 
           if (status == 200) {
-            PD.pd(text: responseData.toString());
-            OneBtnDialog.oneButtonDialog(context,
-                title: "Successful",
-                message: responseData['message'],
-                btnName: 'Ok',
-                icon: Icons.verified_outlined,
-                iconColor: Colors.black,
-                btnColor: Colors.green);
-          //  _loadProjectsLocationList(_selectedProjectName.toString());
-
+            // Success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(responseData['message'] ?? 'Estimation Created'), backgroundColor: Colors.green),
+            );
             clearData();
           } else {
             final String message = responseData['message'] ?? 'Error';
-            PD.pd(text: message);
-            OneBtnDialog.oneButtonDialog(
-              context,
-              title: 'Error',
-              message: message,
-              btnName: 'OK',
-              icon: Icons.error,
-              iconColor: Colors.red,
-              btnColor: Colors.black,
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message), backgroundColor: Colors.red),
             );
           }
         } catch (e) {
-          PD.pd(
-              text: "Error decoding JSON: $e, Body: ${response.body}"); // Debug
-          ExceptionDialog.exceptionDialog(
-            context,
-            title: 'JSON Error',
-            message: "Error decoding JSON response: $e",
-            btnName: 'OK',
-            icon: Icons.error,
-            iconColor: Colors.red,
-            btnColor: Colors.black,
+          String errorMessage = "Error decoding JSON: $e, Body: ${response.body}";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
           );
         }
       } else {
-        WaitDialog.hideDialog(context);
-        String errorMessage =
-            'estimation creating failed with status code ${response
-            .statusCode}';
+        String errorMessage = 'Estimation creation failed with status code ${response.statusCode}';
         if (response.body.isNotEmpty) {
           try {
             final errorData = jsonDecode(response.body);
@@ -669,15 +652,8 @@ class _LocationManagementState extends State<LocationManagement> {
             errorMessage = response.body;
           }
         }
-        PD.pd(text: errorMessage);
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'HTTP Error',
-          message: errorMessage,
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -687,43 +663,32 @@ class _LocationManagementState extends State<LocationManagement> {
       } else if (e is SocketException) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      WaitDialog.hideDialog(context);
-      PD.pd(text: errorMessage);
-      ExceptionDialog.exceptionDialog(
-        context,
-        title: 'General Error',
-        message: errorMessage,
-        btnName: 'OK',
-        icon: Icons.error,
-        iconColor: Colors.red,
-        btnColor: Colors.black,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
     }
   }
 
+
   Future<void> createNewEstimationId() async {
-    // Add BuildContext
     try {
-      WaitDialog.showWaitDialog(context, message: 'location estimations');
+      // Show loading message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Creating Estimation...'), duration: Duration(seconds: 2)),
+      );
+
       String? token = APIToken().token;
       if (token == null || token.isEmpty) {
-        PD.pd(text: "Authentication token is missing.");
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'Authentication Error',
-          message: "Authentication token is missing.",
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        // If token is missing, show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Authentication token is missing."), backgroundColor: Colors.red),
         );
         return;
       }
 
-      PD.pd(text: "Token: $token");
-      String a = '${APIHost().APIURL}/estimation_management.php/create_estimation';
+      String url = '${APIHost().APIURL}/estimation_management.php/create_estimation';
       final response = await http.post(
-        Uri.parse(a),
+        Uri.parse(url),
         headers: {
           "Content-Type": "application/json",
         },
@@ -735,67 +700,37 @@ class _LocationManagementState extends State<LocationManagement> {
           "created_by": UserCredentials().UserName,
         }),
       );
-      PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+
       if (response.statusCode == 200) {
-        WaitDialog.hideDialog(context);
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           final int status = responseData['status'];
-          if (status == 200) {
-            PD.pd(text: responseData.toString());
-            OneBtnDialog.oneButtonDialog(context,
-                title: "Successful",
-                message: responseData['message'],
-                btnName: 'Ok',
-                icon: Icons.verified_outlined,
-                iconColor: Colors.black,
-                btnColor: Colors.green);
-            //  _loadProjectsLocationList(_selectedProjectName.toString());
 
-          }
-          else if (status == 409) {
-            PD.pd(text: responseData.toString());
-            OneBtnDialog.oneButtonDialog(context,
-                title: "Scanning",
-                message: responseData['message'],
-                btnName: 'Ok',
-                icon: Icons.find_in_page,
-                iconColor: Colors.black,
-                btnColor: Colors.green);
-            //  _loadProjectsLocationList(_selectedProjectName.toString());
+          if (status == 200) {
+            // Success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(responseData['message'] ?? 'Estimation Created'), backgroundColor: Colors.green),
+            );
+          } else if (status == 409) {
+            // Scanning message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(responseData['message'] ?? 'Scanning',style: TextStyle(color: Colors.black),), backgroundColor: Colors.yellow),
+            );
             _loadProjectsLocationEstimationList();
-          }
-          else {
+          } else {
             final String message = responseData['message'] ?? 'Error';
-            PD.pd(text: message);
-            OneBtnDialog.oneButtonDialog(
-              context,
-              title: 'Error',
-              message: message,
-              btnName: 'OK',
-              icon: Icons.error,
-              iconColor: Colors.red,
-              btnColor: Colors.black,
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message), backgroundColor: Colors.red),
             );
           }
         } catch (e) {
-          PD.pd(
-              text: "Error decoding JSON: $e, Body: ${response.body}"); // Debug
-          ExceptionDialog.exceptionDialog(
-            context,
-            title: 'JSON Error',
-            message: "Error decoding JSON response: $e",
-            btnName: 'OK',
-            icon: Icons.error,
-            iconColor: Colors.red,
-            btnColor: Colors.black,
+          String errorMessage = "Error decoding JSON: $e, Body: ${response.body}";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
           );
         }
       } else {
-        WaitDialog.hideDialog(context);
-        String errorMessage =
-            'estimation creating failed with status code ${response
-            .statusCode}';
+        String errorMessage = 'Estimation creation failed with status code ${response.statusCode}';
         if (response.body.isNotEmpty) {
           try {
             final errorData = jsonDecode(response.body);
@@ -804,15 +739,8 @@ class _LocationManagementState extends State<LocationManagement> {
             errorMessage = response.body;
           }
         }
-        PD.pd(text: errorMessage);
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'HTTP Error',
-          message: errorMessage,
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -822,19 +750,12 @@ class _LocationManagementState extends State<LocationManagement> {
       } else if (e is SocketException) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      WaitDialog.hideDialog(context);
-      PD.pd(text: errorMessage);
-      ExceptionDialog.exceptionDialog(
-        context,
-        title: 'General Error',
-        message: errorMessage,
-        btnName: 'OK',
-        icon: Icons.error,
-        iconColor: Colors.red,
-        btnColor: Colors.black,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
     }
   }
+
 
   void clearData(){
      _materialId='';

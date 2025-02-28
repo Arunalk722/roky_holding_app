@@ -45,40 +45,32 @@ class _RegistrationPageState extends State<RegistrationPage> {
       );
 
       PD.pd(text: "Response: ${response.statusCode} - ${response.body}");
+      WaitDialog.hideDialog(context);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         final String message = responseData['message'];
         final int status = responseData['status'];
 
-        WaitDialog.hideDialog(context);
-
         if (status == 200) {
           PD.pd(text: "User created successfully: $message");
-          OneBtnDialog.oneButtonDialog(
-            context,
-            title: 'Success',
-            message: 'User has been created successfully.',
-            btnName: 'OK',
-            icon: Icons.verified,
-            iconColor: Colors.green,
-            btnColor: Colors.black,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User has been created successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         } else {
           PD.pd(text: "User creation failed: $message");
-          OneBtnDialog.oneButtonDialog(
-            context,
-            title: 'Registration Failed',
-            message: message,
-            btnName: 'OK',
-            icon: Icons.error,
-            iconColor: Colors.red,
-            btnColor: Colors.black,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registration Failed: $message'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } else {
-        WaitDialog.hideDialog(context);
-        String errorMessage = 'User registration failed with status code ${response.statusCode}';
+        String errorMessage = 'Registration failed with status code ${response.statusCode}';
 
         if (response.body.isNotEmpty) {
           try {
@@ -90,14 +82,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
         }
 
         PD.pd(text: errorMessage);
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'HTTP Error',
-          message: errorMessage,
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
@@ -111,17 +100,15 @@ class _RegistrationPageState extends State<RegistrationPage> {
       }
 
       PD.pd(text: errorMessage);
-      ExceptionDialog.exceptionDialog(
-        context,
-        title: 'General Error',
-        message: errorMessage,
-        btnName: 'OK',
-        icon: Icons.error,
-        iconColor: Colors.red,
-        btnColor: Colors.black,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
+
 
 
   @override
@@ -181,70 +168,44 @@ class _RegistrationPageState extends State<RegistrationPage> {
                             'Confirm your password', Icons.password_rounded, true, 20),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {
-                            if (_txtUserName.text.length < 5) {
-                              PD.pd(text: 'user name');
-                              OneBtnDialog.oneButtonDialog(
-                                context,
-                                title: 'User Registration',
-                                message:
-                                    'Please validate user name (at least 5 characters)',
-                                btnName: 'OK',
-                                icon: Icons.error,
-                                iconColor: Colors.red,
-                                btnColor: Colors.black,
-                              );
-                            } else if (!isValidEmail(_txtEmail.text)) {
-                              PD.pd(text: 'invalid email');
-                              OneBtnDialog.oneButtonDialog(
-                                context,
-                                title: 'User Registration',
-                                message: 'Please enter a valid email address',
-                                btnName: 'OK',
-                                icon: Icons.error,
-                                iconColor: Colors.red,
-                                btnColor: Colors.black,
-                              );
-                            } else if (_txtPhone.text.length < 10) {
-                              PD.pd(text: 'phone number');
-                              OneBtnDialog.oneButtonDialog(
-                                context,
-                                title: 'User Registration',
-                                message:
-                                    'Please enter a valid phone number (at least 10 digits)',
-                                btnName: 'OK',
-                                icon: Icons.error,
-                                iconColor: Colors.red,
-                                btnColor: Colors.black,
-                              );
-                            } else if (_txtPassword.text !=
-                                _txtConfirmPassword.text) {
-                              PD.pd(text: 'passwords do not match');
-                              OneBtnDialog.oneButtonDialog(
-                                context,
-                                title: 'User Registration',
-                                message: 'Passwords do not match',
-                                btnName: 'OK',
-                                icon: Icons.error,
-                                iconColor: Colors.red,
-                                btnColor: Colors.black,
-                              );
-                            } else if (_txtPassword.text.length < 5) {
-                              // Password length check
-                              PD.pd(text: 'password too short');
-                              OneBtnDialog.oneButtonDialog(
-                                context,
-                                title: 'User Registration',
-                                message:
-                                    'Password must be at least 5 characters long',
-                                btnName: 'OK',
-                                icon: Icons.error,
-                                iconColor: Colors.red,
-                                btnColor: Colors.black,
-                              );
-                            } else {
-                              createUser(context);
-                            }
+                          onPressed: () {if (_txtUserName.text.length < 5) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('User name must be at least 5 characters long.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else if (!isValidEmail(_txtEmail.text)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a valid email address.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else if (_txtPhone.text.length < 10) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Phone number must be at least 10 digits.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else if (_txtPassword.text != _txtConfirmPassword.text) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Passwords do not match.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else if (_txtPassword.text.length < 5) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password must be at least 5 characters long.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          } else {
+                            createUser(context);
+                          }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueAccent,

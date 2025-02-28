@@ -35,18 +35,23 @@ class _LoginAppState extends State<LoginApp> {
  // final String logo = '${APIHost().APIImage}/logo.png';
 
   Future<void> loginSystem() async {
-    WaitDialog.showWaitDialog(context, message: 'sign in');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Signing in...'), duration: Duration(seconds: 2)),
+    );
+
     try {
       final response = await http.post(
         Uri.parse('${APIHost().APIURL}/login_controller.php/login'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(
-            {"username": _userName.text, "password": _password.text}),
+        body: jsonEncode({
+          "username": _userName.text,
+          "password": _password.text
+        }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        final int status = responseData['status']; // Get status first
+        final int status = responseData['status'];
 
         if (status == 200) {
           UserCredentials().setUserData(
@@ -58,54 +63,50 @@ class _LoginAppState extends State<LoginApp> {
           APIToken().token = responseData['token'];
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', responseData['token']);
-          WaitDialog.hideDialog(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful! Redirecting...'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomePage()),
           );
         } else {
-          final String message = responseData['message'] ??
-              'Login failed'; // Provide a default message
+          final String message = responseData['message'] ?? 'Login failed';
           PD.pd(text: message);
-          WaitDialog.hideDialog(context);
-          OneBtnDialog.oneButtonDialog(
-            context,
-            title: 'Failed to login',
-            message: message,
-            btnName: 'OK',
-            icon: Icons.error,
-            iconColor: Colors.red,
-            btnColor: Colors.black,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to login: $message'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } else {
-        String errorMessage =
-            'Login failed with status code ${response.statusCode}';
+        String errorMessage = 'Login failed with status code ${response.statusCode}';
         if (response.body.isNotEmpty) {
           try {
             final errorData = jsonDecode(response.body);
-            errorMessage = errorData['message'] ??
-                errorMessage; // Extract error message if available
+            errorMessage = errorData['message'] ?? errorMessage;
           } catch (e) {
-            // If JSON decoding fails, use the raw body
             errorMessage = response.body;
           }
         }
+
         PD.pd(text: errorMessage);
-        WaitDialog.hideDialog(context);
-        ExceptionDialog.exceptionDialog(
-          context,
-          title: 'Failed to login',
-          message: errorMessage,
-          btnName: 'OK',
-          icon: Icons.error,
-          iconColor: Colors.red,
-          btnColor: Colors.black,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
-      // Catch network errors, JSON parsing errors, etc.
       String errorMessage = 'An error occurred during login: $e';
+
       if (e is FormatException) {
         errorMessage = 'Invalid JSON response';
       } else if (e is SocketException) {
@@ -113,18 +114,15 @@ class _LoginAppState extends State<LoginApp> {
       }
 
       PD.pd(text: errorMessage);
-      WaitDialog.hideDialog(context);
-      ExceptionDialog.exceptionDialog(
-        context,
-        title: 'Login Error',
-        message: errorMessage,
-        btnName: 'OK',
-        icon: Icons.error,
-        iconColor: Colors.red,
-        btnColor: Colors.black,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -210,12 +208,13 @@ class _LoginAppState extends State<LoginApp> {
                           MaterialPageRoute(
                               builder: (context) => const RegistrationPage()));
                     },
+
                     child: const Text(
                       "Need help?",
                       style: TextStyle(color: Colors.blueAccent),
                     ),
                   ),
-                  AppVersionTile()
+                  AppVersionTile(),
                 ],
               ),
             ),
